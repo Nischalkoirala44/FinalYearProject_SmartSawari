@@ -1,37 +1,47 @@
-// src/controller/vehicleController.js
-
-const Vehicle = require("../models/Vehicle");
 const Notification = require("../models/Notification");
 
-// Fetch all approved vehicles for landing page
+const { Op } = require("sequelize");
+const Vehicle = require("../models/Vehicle");
+const Booking = require("../models/Booking");
+
 exports.getApprovedVehicles = async (req, res) => {
   try {
-    const approvedVehicles = await Vehicle.findAll({
-      where: { status: "approved", availabilityStatus: "available" },
-      attributes: [
-        "id",
-        "registrationNumber",
-        "vehicleType",
-        "vehicleCondition",
-        "pricePerDay",
-        "documentImage",
-        "status",
-        "created_at",
-      ],
+    const today = new Date().toISOString().split('T')[0]; // Current date YYYY-MM-DD
+
+    const vehicles = await Vehicle.findAll({
+      where: { status: "approved" },
+      include: [{
+        model: Booking,
+        as: 'bookings',
+        required: false, // Left Outer Join
+        where: {
+          bookingStatus: 'confirmed',
+          startDate: { [Op.lte]: today },
+          endDate: { [Op.gte]: today }
+        }
+      }],
       order: [["created_at", "DESC"]],
+    });
+
+    // Transform data to determine Current Availability
+    const vehiclesWithStatus = vehicles.map(vehicle => {
+      const v = vehicle.toJSON();
+      const isOccupiedToday = v.bookings && v.bookings.length > 0;
+      
+      return {
+        ...v,
+        currentAvailability: isOccupiedToday ? "booked" : "available",
+        bookings: undefined 
+      };
     });
 
     res.status(200).json({
       success: true,
-      count: approvedVehicles.length,
-      vehicles: approvedVehicles,
+      count: vehiclesWithStatus.length,
+      vehicles: vehiclesWithStatus,
     });
   } catch (error) {
-    console.error("Error fetching approved vehicles:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
