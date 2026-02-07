@@ -10,6 +10,25 @@ const User = sequelize.define("User", {
   password: { type: DataTypes.STRING, allowNull: false, field: 'password' },
   profileImage: { type: DataTypes.JSON, allowNull: true, field: 'profile_image' },
   role: { type: DataTypes.ENUM("owner", "renter", "admin"), defaultValue: "renter", field: 'role' },
+
+  esewaMobile: { 
+    type: DataTypes.STRING, 
+    allowNull: true, 
+    field: 'esewa_mobile',
+    comment: 'The personal eSewa number where the owner receives payouts'
+  },
+  earningsBalance: { 
+    type: DataTypes.DECIMAL(10, 2), 
+    defaultValue: 0.00, 
+    field: 'earnings_balance',
+    comment: 'Total unpaid earnings for this owner'
+  },
+
+  totalEarned: {
+  type: DataTypes.DECIMAL(10, 2),
+  defaultValue: 0.00,
+},
+  
   resetPasswordToken: { type: DataTypes.STRING, allowNull: true, field: 'reset_password_token' },
   resetPasswordExpires: { type: DataTypes.DATE, allowNull: true, field: 'reset_password_expires' },
 }, {

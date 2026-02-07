@@ -45,6 +45,27 @@ exports.getApprovedVehicles = async (req, res) => {
   }
 };
 
+// Add this to vehicleController.js
+exports.getPublicVehicleById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vehicle = await Vehicle.findOne({
+      where: {
+        id,
+        status: "approved"
+      }
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({ success: false, message: "Vehicle not found" });
+    }
+
+    res.status(200).json({ success: true, vehicle });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.getApprovedVehicleById = async (req, res) => {
   try {
     const { id } = req.params;

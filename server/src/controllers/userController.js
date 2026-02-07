@@ -75,7 +75,8 @@ const handleProfileUpload = async (file, userId) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { name, email, mobile } = req.body;
+    // 1. Added esewaMobile here
+    const { name, email, mobile, esewaMobile } = req.body;
 
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -83,6 +84,9 @@ const updateProfile = async (req, res) => {
     if (name) user.name = name;
     if (email) user.email = email;
     if (mobile) user.mobile = mobile;
+    
+    // 2. Allow updating the eSewa payout number
+    if (esewaMobile) user.esewaMobile = esewaMobile;
 
     if (req.file) {
       const profileImageUrl = await handleProfileUpload(req.file, req.user.id);
@@ -98,11 +102,12 @@ const updateProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         mobile: user.mobile,
+        esewaMobile: user.esewaMobile,
+        earningsBalance: user.earningsBalance, 
         profileImage: user.profileImage,
       },
     });
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ message: err.message });
   }
 };

@@ -16,6 +16,7 @@ const authRoutes = require("./src/routes/authRoute");
 const verificationRoutes = require("./src/routes/verificationRoute");
 const vehicleRoutes = require("./src/routes/vehicleRoutes");
 const bookingRoutes = require("./src/routes/bookingRoutes");
+const withdrawalRoute = require("./src/routes/withdrawalRoute");
 
 
 const PORT = process.env.PORT || 3001;
@@ -54,6 +55,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/verifications", verificationRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/withdrawals", withdrawalRoute);
+
 
 // Start server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
