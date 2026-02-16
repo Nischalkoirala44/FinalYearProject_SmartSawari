@@ -1,4 +1,5 @@
 const Notification = require("../models/Notification");
+const Location = require("../models/Location");
 
 const { Op } = require("sequelize");
 const Vehicle = require("../models/Vehicle");
@@ -19,7 +20,12 @@ exports.getApprovedVehicles = async (req, res) => {
           startDate: { [Op.lte]: today },
           endDate: { [Op.gte]: today }
         }
-      }],
+      },
+      {
+          model: Location,
+          as: 'location', // Ensure this matches your model alias exactly
+        }
+    ],
       order: [["created_at", "DESC"]],
     });
 

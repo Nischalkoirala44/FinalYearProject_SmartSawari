@@ -2,7 +2,10 @@ const crypto = require("crypto");
 const Booking = require("../models/Booking");
 const Vehicle = require("../models/Vehicle");
 const User = require("../models/User");
+const Location = require("../models/Location");
+const axios = require("axios");
 const { Op } = require("sequelize");
+const { sendPayoutReceipt } = require("../utils/email");
 
 // Create Booking Intent
 exports.createBookingIntent = async (req, res) => {
@@ -155,38 +158,62 @@ exports.releaseBookingAmount = async (req, res) => {
   try {
     const { bookingId } = req.params;
 
+    // 1. Fetch the booking and owner details
     const booking = await Booking.findOne({
       where: { bookingId, paymentStatus: "paid", amountReleased: false },
-      include: [{ model: Vehicle, as: 'vehicle' }]
+      include: [{ 
+        model: Vehicle, 
+        as: 'vehicle',
+        include: [{ model: User, as: 'owner' }] 
+      }]
     });
 
-    if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found or already released" });
+    if (!booking || !booking.vehicle?.owner) {
+      return res.status(404).json({ success: false, message: "Booking or Owner not found" });
     }
 
-    const total = parseFloat(booking.totalAmount);
-    const ownerShare = total * 0.90;
-    const ownerId = booking.vehicle?.userId;
+    const owner = booking.vehicle.owner;
+    const ownerShare = parseFloat(booking.totalAmount) * 0.90;
 
-    if (!ownerId) {
-      return res.status(400).json({ success: false, message: "Owner not associated with this vehicle" });
+    if (!owner.esewaMobile) {
+      return res.status(400).json({ success: false, message: "Owner has no eSewa mobile registered." });
     }
 
-    // Increment current balance AND lifetime earnings
+    const ESEWA_PAYOUT_URL = "https://uat.esewa.com.np/api/v1/disbursements/transfer"; 
+    
+    const payoutPayload = {
+      merchant_id: process.env.ESEWA_PRODUCT_CODE,
+      amount: ownerShare,
+      receiver_id: owner.esewaMobile,
+      note: `Payout for Booking ${bookingId} on Smart Sawari`,
+      transaction_uuid: `PAYOUT-${bookingId}-${Date.now()}`
+    };
+
+    const esewaResponse = await axios.post(ESEWA_PAYOUT_URL, payoutPayload, {
+        headers: { 'Authorization': `Bearer ${process.env.ESEWA_API_TOKEN}` }
+    });
+
+    // REAL WORLD ESEWA DISBURSEMENT END
     await User.increment(
-      { 
-        earningsBalance: ownerShare,
-        totalEarned: ownerShare 
-      },
-      { where: { id: ownerId } }
+      { earningsBalance: ownerShare, totalEarned: ownerShare },
+      { where: { id: owner.id } }
     );
     
     await booking.update({ amountReleased: true });
 
+    await sendPayoutReceipt(owner.email, {
+      bookingId: booking.bookingId,
+      amount: ownerShare,
+      esewaMobile: owner.esewaMobile
+    });
+
+    console.log(`Rs. ${ownerShare} released to ${owner.name} (${owner.esewaMobile}) for Booking ${booking.bookingId}`);
+
     res.status(200).json({ 
       success: true, 
-      message: `Rs. ${ownerShare} released to owner successfully.` 
+      message: `Rs. ${ownerShare} successfully transferred to ${owner.esewaMobile} via eSewa.` 
     });
+
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -266,5 +293,105 @@ exports.getOwnerEarnings = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getBookingDetailsForRenter = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const userId = req.user.id;
+
+    const booking = await Booking.findOne({
+      where: { 
+        bookingId, 
+        renterId: userId 
+      },
+      include: [
+        {
+          model: Vehicle,
+          as: 'vehicle',
+          include: [
+            { 
+              model: Location, 
+              as: 'location'
+            },
+            {
+              model: User,
+              as: 'owner',
+              attributes: ['name', 'mobile']
+            }
+          ]
+        }
+      ]
+    });
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      booking
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.cancelBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await Booking.findOne({ where: { bookingId, renterId: req.user.id } });
+
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    if (new Date(booking.startDate) <= new Date()) {
+      return res.status(400).json({ message: "Cannot cancel a trip that has already started." });
+    }
+
+    await booking.update({ bookingStatus: 'cancelled' });
+
+    res.status(200).json({ success: true, message: "Booking cancelled successfully. Refund will be processed." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.getMyBookings = async (req, res) => {
+  try {
+    const userId = req.user.id; 
+
+    const bookings = await Booking.findAll({
+      where: { renterId: userId },
+      include: [
+        {
+          model: Vehicle,
+          as: 'vehicle',
+          attributes: ['registrationNumber', 'vehicleType', 'vehicleCondition', 'documentImage'],
+          include: [
+            { 
+              model: Location, 
+              as: 'location',
+              attributes: ['locationName', 'city', 'addressLine', 'province', 'latitude', 'longitude'] 
+            }
+          ]
+        }
+      ],
+      order: [['createdAt', 'DESC']] 
+    });
+
+    res.status(200).json({
+      success: true,
+      count: bookings.length,
+      bookings
+    });
+  } catch (error) {
+    console.error("Error fetching user bookings:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to fetch bookings", 
+      error: error.message 
+    });
   }
 };

@@ -25,4 +25,8 @@ router.get("/stats",
     // verifyRole("owner"),
     bookingController.getOwnerEarnings);
 
+router.get("/user-bookings",
+    authenticateUser,
+    bookingController.getMyBookings);
+
 module.exports = router;

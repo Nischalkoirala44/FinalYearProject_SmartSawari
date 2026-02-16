@@ -24,4 +24,25 @@ async function sendOtpEmail(email, otp) {
   await transporter.sendMail(mailOptions);
 }
 
-module.exports = { sendOtpEmail };
+ async function sendPayoutReceipt(email, payoutDetails) {
+  const mailOptions = {
+    from: '"Smart Sawari" <koiralanischal01@gmail.com>',
+    to: email,
+    subject: "Payout Confirmed: Smart Sawari Receipt",
+    html: `
+      <div style="font-family: Arial, sans-serif; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
+        <h2 style="color: #2563eb;">Payment Receipt</h2>
+        <p>Dear Partner, your payout has been successfully processed.</p>
+        <hr>
+        <p><strong>Amount Released:</strong> Rs. ${payoutDetails.amount}</p>
+        <p><strong>E-Sewa Mobile:</strong> ${payoutDetails.esewaMobile}</p>
+        <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+        <hr>
+        <p style="font-size: 12px; color: #666;">This is an automated receipt for your Smart Sawari earnings.</p>
+      </div>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
+module.exports = { sendOtpEmail, sendPayoutReceipt };

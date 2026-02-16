@@ -1,5 +1,6 @@
 // src/controller/verificationController.js
 const Vehicle = require("../models/Vehicle");
+const Location = require("../models/Location");
 const { sendNotification } = require("../utils/notificationService");
 
 exports.createVerification = async (req, res) => {
@@ -18,7 +19,7 @@ exports.createVerification = async (req, res) => {
       vehicleImages: files.vehicleImages?.map(f => f.path) || [],
     };
 
-    const { registrationNumber, vehicleType, vehicleCondition, pricePerDay } = req.body;
+    const { registrationNumber, vehicleType, vehicleCondition, pricePerDay, locationId } = req.body;
 
     const verification = await Vehicle.createVerification({
       registrationNumber,
@@ -28,6 +29,7 @@ exports.createVerification = async (req, res) => {
       documentImage,
       status: "pending",
       userId: req.user.id,
+      locationId: parseInt(locationId),
       remarks: "Pending admin review"
     });
 
@@ -68,7 +70,10 @@ exports.getAllVerifications = async (req, res) => {
 // Get verification by ID
 exports.getVerificationById = async (req, res) => {
   try {
-    const verification = await Vehicle.findByPk(req.params.id);
+
+    const verification = await Vehicle.findByPk(req.params.id, {
+      include: ["location"]
+    });
 
     if (!verification) {
       return res.status(404).json({ success: false, message: "Not found" });

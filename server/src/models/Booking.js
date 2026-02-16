@@ -65,6 +65,7 @@ const Booking = sequelize.define(
 module.exports = Booking;
 
 const Vehicle = require("./Vehicle");
+const Location = require("./Location");
 
 Vehicle.hasMany(Booking, { foreignKey: "vehicleId", as: "bookings" });
 Booking.belongsTo(Vehicle, { foreignKey: "vehicleId", as: "vehicle" });
@@ -75,3 +76,6 @@ User.hasMany(Vehicle, { foreignKey: "userId", as: "vehicles" });
 
 Booking.belongsTo(User, { foreignKey: "renterId", as: "renter" });
 User.hasMany(Booking, { foreignKey: "renterId", as: "rentedBookings" });
+
+Location.hasMany(Vehicle, { foreignKey: 'locationId' });
+Vehicle.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });

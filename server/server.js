@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 const express = require("express");
 const cors = require("cors");
+const axios = require('axios');
 
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -17,6 +18,7 @@ const verificationRoutes = require("./src/routes/verificationRoute");
 const vehicleRoutes = require("./src/routes/vehicleRoutes");
 const bookingRoutes = require("./src/routes/bookingRoutes");
 const withdrawalRoute = require("./src/routes/withdrawalRoute");
+const locationRoute = require("./src/routes/locationRoute");
 
 
 const PORT = process.env.PORT || 3001;
@@ -56,6 +58,24 @@ app.use("/api/verifications", verificationRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/withdrawals", withdrawalRoute);
+app.use("/api/locations", locationRoute);
+
+app.get('/api/proxy/geocode', async (req, res) => {
+    try {
+        const { lat, lon } = req.query;
+        const response = await axios.get(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`,
+            {
+                headers: {
+                    'User-Agent': 'SmartSawariApp/1.0'
+                }
+            }
+        );
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch address' });
+    }
+});
 
 
 // Start server
