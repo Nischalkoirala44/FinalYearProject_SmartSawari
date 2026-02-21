@@ -1,4 +1,3 @@
-// src/controller/verificationController.js
 const Vehicle = require("../models/Vehicle");
 const Location = require("../models/Location");
 const { sendNotification } = require("../utils/notificationService");

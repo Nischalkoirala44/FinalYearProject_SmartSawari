@@ -7,14 +7,14 @@ const Booking = require("../models/Booking");
 
 exports.getApprovedVehicles = async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0]; // Current date YYYY-MM-DD
+    const today = new Date().toISOString().split('T')[0];
 
     const vehicles = await Vehicle.findAll({
       where: { status: "approved" },
       include: [{
         model: Booking,
         as: 'bookings',
-        required: false, // Left Outer Join
+        required: false,
         where: {
           bookingStatus: 'confirmed',
           startDate: { [Op.lte]: today },
@@ -23,7 +23,7 @@ exports.getApprovedVehicles = async (req, res) => {
       },
       {
           model: Location,
-          as: 'location', // Ensure this matches your model alias exactly
+          as: 'location',
         }
     ],
       order: [["created_at", "DESC"]],
@@ -51,7 +51,6 @@ exports.getApprovedVehicles = async (req, res) => {
   }
 };
 
-// Add this to vehicleController.js
 exports.getPublicVehicleById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -137,6 +136,30 @@ exports.getRejectedVehicles = async (req, res) => {
   }
 };
 
+// get vehicles for user that have posted for verification
+exports.getMyVehicles = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const vehicles = await Vehicle.findAll({
+      where: { userId },
+      order: [["created_at", "DESC"]],
+    });
+
+    res.status(200).json({
+      success: true,
+      count: vehicles.length,
+      vehicles,
+    });
+  }
+    catch (error) {
+      console.error("Error fetching user's vehicles:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+};
+
 exports.getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.findAll({
@@ -147,5 +170,120 @@ exports.getNotifications = async (req, res) => {
     res.json({ success: true, notifications });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
+exports.updateVehicle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const files = req.files;
+  
+    const { 
+      vehicleCondition, 
+      pricePerDay, 
+      locationId, 
+      availabilityStatus 
+    } = req.body;
+
+    const vehicle = await Vehicle.findOne({ where: { id, userId } });
+
+    if (!vehicle) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Vehicle not found or you are not authorized to edit it." 
+      });
+    }
+
+    let currentDocs = typeof vehicle.documentImage === 'string' 
+      ? JSON.parse(vehicle.documentImage) 
+      : vehicle.documentImage;
+
+    if (files && files.vehicleImages) {
+      currentDocs = {
+        ...currentDocs,
+        vehicleImages: files.vehicleImages.map(f => f.path)
+      };
+      vehicle.changed('documentImage', true);
+    }
+
+    await vehicle.update({
+      vehicleCondition: vehicleCondition || vehicle.vehicleCondition,
+      pricePerDay: pricePerDay || vehicle.pricePerDay,
+      locationId: locationId ? parseInt(locationId) : vehicle.locationId,
+      availabilityStatus: availabilityStatus || vehicle.availabilityStatus,
+      documentImage: currentDocs,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Vehicle updated successfully",
+      vehicle,
+    });
+
+  } catch (error) {
+    console.error("Error updating vehicle:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Update failed", 
+      error: error.message 
+    });
+  }
+};
+
+
+exports.deleteVehicle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const deleted = await Vehicle.destroy({
+      where: { id, userId }
+    });
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found or you don't have permission to delete it.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Vehicle deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Error deleting vehicle:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getVehicleById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const vehicle = await Vehicle.findOne({
+      where: { 
+        id, 
+        userId
+      }
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found or unauthorized",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      vehicle,
+    });
+  } catch (error) {
+    console.error("Error in getVehicleById:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };

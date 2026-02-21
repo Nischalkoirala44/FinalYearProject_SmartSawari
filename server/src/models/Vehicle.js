@@ -24,6 +24,7 @@ const Vehicle = sequelize.define("Vehicle", {
   documentImage: { type: DataTypes.JSONB, allowNull: false },
   status: { type: DataTypes.ENUM("pending", "approved", "rejected"), defaultValue: "pending" },
   remarks: { type: DataTypes.JSONB, allowNull: true },
+  availabilityStatus: { type: DataTypes.ENUM("available", "unavailable"), defaultValue: "available" }
   
   
 }, {
