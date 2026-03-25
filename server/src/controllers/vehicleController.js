@@ -1,4 +1,3 @@
-const Notification = require("../models/Notification");
 const Location = require("../models/Location");
 
 const { Op } = require("sequelize");
@@ -160,10 +159,11 @@ exports.getMyVehicles = async (req, res) => {
     }
 };
 
+/*
 exports.getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.findAll({
-      where: { userId: req.params.userId },
+      where: { userId: req.user.id }, 
       order: [["createdAt", "DESC"]],
     });
 
@@ -172,7 +172,7 @@ exports.getNotifications = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
+*/
 
 exports.updateVehicle = async (req, res) => {
   try {

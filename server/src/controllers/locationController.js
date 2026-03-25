@@ -28,4 +28,18 @@ exports.getMyLocations = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+}; 
+
+exports.getLocationById = async (req, res) => {
+  try {
+    const location = await Location.findByPk(req.params.id);
+
+    if (!location) {
+      return res.status(404).json({ success: false, message: "Location not found" });
+    }
+
+    res.status(200).json({ success: true, location });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };

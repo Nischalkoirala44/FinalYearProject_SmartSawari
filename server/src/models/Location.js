@@ -24,4 +24,7 @@ const Location = sequelize.define("Location", {
 
 module.exports = Location;
 
+
+/*
 Location.hasMany(Vehicle, { foreignKey: 'locationId', as: 'vehicles' });
+*/

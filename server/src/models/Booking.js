@@ -64,6 +64,7 @@ const Booking = sequelize.define(
 
 module.exports = Booking;
 
+/*
 const Vehicle = require("./Vehicle");
 const Location = require("./Location");
 
@@ -79,3 +80,4 @@ User.hasMany(Booking, { foreignKey: "renterId", as: "rentedBookings" });
 
 Location.hasMany(Vehicle, { foreignKey: 'locationId' });
 Vehicle.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
+*/

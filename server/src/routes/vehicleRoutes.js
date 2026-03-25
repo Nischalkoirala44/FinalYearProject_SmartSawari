@@ -26,14 +26,6 @@ router.get("/approved/:id", getApprovedVehicleById);
 // GET public vehicle by ID (no authentication required)
 router.get("/public/:id", getPublicVehicleById);
 
-// GET notifications for vehicle owners
-router.get(
-  "/notifications",
-  authenticateUser,
-  verifyRole(["owner"]),
-  getNotifications,
-);
-
 // GET my vehicles for the authenticated user
 router.get(
   "/owner-vehicles",

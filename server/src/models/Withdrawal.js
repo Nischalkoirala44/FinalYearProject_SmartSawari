@@ -32,5 +32,7 @@ const Withdrawal = sequelize.define("Withdrawal", {
 
 module.exports = Withdrawal;
 
+/*
 User.hasMany(Withdrawal, { foreignKey: "userId" });
 Withdrawal.belongsTo(User, { foreignKey: "userId" });
+*/

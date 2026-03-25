@@ -3,6 +3,7 @@ const Booking = require("../models/Booking");
 const Vehicle = require("../models/Vehicle");
 const User = require("../models/User");
 const Location = require("../models/Location");
+const Notification = require("../models/Notification");
 const axios = require("axios");
 const { Op } = require("sequelize");
 const { sendPayoutReceipt } = require("../utils/email");
@@ -19,15 +20,15 @@ exports.createBookingIntent = async (req, res) => {
         bookingStatus: "confirmed",
         [Op.and]: [
           { startDate: { [Op.lte]: endDate } },
-          { endDate: { [Op.gte]: startDate } } 
-        ]
-      }
+          { endDate: { [Op.gte]: startDate } },
+        ],
+      },
     });
 
     if (overlapping) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: `Vehicle is unavailable from ${overlapping.startDate} to ${overlapping.endDate}.` 
+        message: `Vehicle is unavailable from ${overlapping.startDate} to ${overlapping.endDate}.`,
       });
     }
 
@@ -47,8 +48,9 @@ exports.createBookingIntent = async (req, res) => {
     const secret = process.env.ESEWA_SECRET_KEY || "8g7h3w9charter";
     const product_code = process.env.ESEWA_PRODUCT_CODE || "EPAYTEST";
     const signatureString = `total_amount=${totalAmount},transaction_uuid=${bookingId},product_code=${product_code}`;
-    
-    const signature = crypto.createHmac("sha256", secret)
+
+    const signature = crypto
+      .createHmac("sha256", secret)
       .update(signatureString)
       .digest("base64");
 
@@ -56,7 +58,7 @@ exports.createBookingIntent = async (req, res) => {
       success: true,
       signature,
       bookingId,
-      product_code
+      product_code,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -70,27 +72,47 @@ exports.verifyEsewaPayment = async (req, res) => {
     if (!data) return res.redirect(`${process.env.CLIENT_URL}/payment-failed`);
 
     const decoded = JSON.parse(Buffer.from(data, "base64").toString("utf-8"));
-    
+
     if (decoded.status === "COMPLETE") {
-      const booking = await Booking.findOne({ 
-        where: { bookingId: decoded.transaction_uuid }
+      const booking = await Booking.findOne({
+        where: { bookingId: decoded.transaction_uuid },
+        include: [{ model: Vehicle, as: "vehicle" }],
       });
 
       if (booking && booking.paymentStatus !== "paid") {
-        
         await booking.update({
           paymentStatus: "paid",
           bookingStatus: "confirmed",
           transactionId: decoded.transaction_code || "ESEWA_REF",
-          amountReleased: false // Track that owner hasn't been paid yet
+          amountReleased: false, // Track that owner hasn't been paid yet
         });
-        
-        return res.redirect(`${process.env.CLIENT_URL}/payment-success?ref=${decoded.transaction_uuid}`);
+
+        await Notification.create({
+          userId: booking.renterId,
+          title: "Booking Confirmed! 🏍️",
+          message: `Payment successful for Booking. Your ride is ready!`,
+          type: "BOOKING_CONFIRMED",
+        });
+
+        if (booking.vehicle) {
+          await Notification.create({
+            userId: booking.vehicle.userId,
+            title: "New Booking Received! 💰",
+            message: `Your vehicle ${booking.vehicle.registrationNumber} has been booked from ${booking.startDate} to ${booking.endDate}.`,
+            type: "NEW_BOOKING",
+          });
+        }
+
+        return res.redirect(
+          `${process.env.CLIENT_URL}/payment-success?ref=${decoded.transaction_uuid}`,
+        );
       } else if (booking && booking.paymentStatus === "paid") {
-        return res.redirect(`${process.env.CLIENT_URL}/payment-success?ref=${decoded.transaction_uuid}`);
+        return res.redirect(
+          `${process.env.CLIENT_URL}/payment-success?ref=${decoded.transaction_uuid}`,
+        );
       }
     }
-    
+
     res.redirect(`${process.env.CLIENT_URL}/payment-failed`);
   } catch (error) {
     console.error("Verification Error:", error);
@@ -105,49 +127,51 @@ exports.releasePartialAmount = async (req, res) => {
 
     const booking = await Booking.findOne({
       where: { bookingId, paymentStatus: "paid" },
-      include: [{ model: Vehicle, as: 'vehicle' }]
+      include: [{ model: Vehicle, as: "vehicle" }],
     });
 
     if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
     }
 
     const totalBookingAmount = parseFloat(booking.totalAmount);
-    
-    const maxOwnerShare = totalBookingAmount * 0.90; 
-    
+
+    const maxOwnerShare = totalBookingAmount * 0.9;
+
     const releasedSoFar = parseFloat(booking.amountAlreadyReleased || 0);
     const requestedRelease = parseFloat(customAmount);
 
     if (releasedSoFar + requestedRelease > maxOwnerShare) {
       const remainingPossible = maxOwnerShare - releasedSoFar;
-      return res.status(400).json({ 
-        success: false, 
-        message: `Limit Exceeded. Max owner share (90%) is Rs. ${maxOwnerShare}. You can only release Rs. ${remainingPossible.toFixed(2)} more.` 
+      return res.status(400).json({
+        success: false,
+        message: `Limit Exceeded. Max owner share (90%) is Rs. ${maxOwnerShare}. You can only release Rs. ${remainingPossible.toFixed(2)} more.`,
       });
     }
 
     const ownerId = booking.vehicle?.userId;
 
-    // Increment User Wallet 
+    // Increment User Wallet
     await User.increment(
-      { 
+      {
         earningsBalance: requestedRelease,
-        totalEarned: requestedRelease 
+        totalEarned: requestedRelease,
       },
-      { where: { id: ownerId } }
+      { where: { id: ownerId } },
     );
-    
+
     // Update Booking tracking
     const newReleasedTotal = releasedSoFar + requestedRelease;
-    await booking.update({ 
+    await booking.update({
       amountAlreadyReleased: newReleasedTotal,
-      amountReleased: newReleasedTotal >= maxOwnerShare 
+      amountReleased: newReleasedTotal >= maxOwnerShare,
     });
 
-    res.status(200).json({ 
-      success: true, 
-      message: `Rs. ${requestedRelease} released. Owner has received Rs. ${newReleasedTotal} of their Rs. ${maxOwnerShare} total share.` 
+    res.status(200).json({
+      success: true,
+      message: `Rs. ${requestedRelease} released. Owner has received Rs. ${newReleasedTotal} of their Rs. ${maxOwnerShare} total share.`,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -161,59 +185,70 @@ exports.releaseBookingAmount = async (req, res) => {
     // 1. Fetch the booking and owner details
     const booking = await Booking.findOne({
       where: { bookingId, paymentStatus: "paid", amountReleased: false },
-      include: [{ 
-        model: Vehicle, 
-        as: 'vehicle',
-        include: [{ model: User, as: 'owner' }] 
-      }]
+      include: [
+        {
+          model: Vehicle,
+          as: "vehicle",
+          include: [{ model: User, as: "owner" }],
+        },
+      ],
     });
 
     if (!booking || !booking.vehicle?.owner) {
-      return res.status(404).json({ success: false, message: "Booking or Owner not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking or Owner not found" });
     }
 
     const owner = booking.vehicle.owner;
-    const ownerShare = parseFloat(booking.totalAmount) * 0.90;
+    const ownerShare = parseFloat(booking.totalAmount) * 0.9;
 
     if (!owner.esewaMobile) {
-      return res.status(400).json({ success: false, message: "Owner has no eSewa mobile registered." });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Owner has no eSewa mobile registered.",
+        });
     }
 
-    const ESEWA_PAYOUT_URL = "https://uat.esewa.com.np/api/v1/disbursements/transfer"; 
-    
+    const ESEWA_PAYOUT_URL =
+      "https://uat.esewa.com.np/api/v1/disbursements/transfer";
+
     const payoutPayload = {
       merchant_id: process.env.ESEWA_PRODUCT_CODE,
       amount: ownerShare,
       receiver_id: owner.esewaMobile,
       note: `Payout for Booking ${bookingId} on Smart Sawari`,
-      transaction_uuid: `PAYOUT-${bookingId}-${Date.now()}`
+      transaction_uuid: `PAYOUT-${bookingId}-${Date.now()}`,
     };
 
     const esewaResponse = await axios.post(ESEWA_PAYOUT_URL, payoutPayload, {
-        headers: { 'Authorization': `Bearer ${process.env.ESEWA_API_TOKEN}` }
+      headers: { Authorization: `Bearer ${process.env.ESEWA_API_TOKEN}` },
     });
 
     // REAL WORLD ESEWA DISBURSEMENT END
     await User.increment(
       { earningsBalance: ownerShare, totalEarned: ownerShare },
-      { where: { id: owner.id } }
+      { where: { id: owner.id } },
     );
-    
+
     await booking.update({ amountReleased: true });
 
     await sendPayoutReceipt(owner.email, {
       bookingId: booking.bookingId,
       amount: ownerShare,
-      esewaMobile: owner.esewaMobile
+      esewaMobile: owner.esewaMobile,
     });
 
-    console.log(`Rs. ${ownerShare} released to ${owner.name} (${owner.esewaMobile}) for Booking ${booking.bookingId}`);
+    console.log(
+      `Rs. ${ownerShare} released to ${owner.name} (${owner.esewaMobile}) for Booking ${booking.bookingId}`,
+    );
 
-    res.status(200).json({ 
-      success: true, 
-      message: `Rs. ${ownerShare} successfully transferred to ${owner.esewaMobile} via eSewa.` 
+    res.status(200).json({
+      success: true,
+      message: `Rs. ${ownerShare} successfully transferred to ${owner.esewaMobile} via eSewa.`,
     });
-
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -222,24 +257,26 @@ exports.releaseBookingAmount = async (req, res) => {
 exports.getPendingPayouts = async (req, res) => {
   try {
     const pendingBookings = await Booking.findAll({
-      where: { 
-        paymentStatus: "paid", 
-        amountReleased: false 
+      where: {
+        paymentStatus: "paid",
+        amountReleased: false,
       },
       include: [
-        { 
-          model: Vehicle, 
-          as: 'vehicle',
-          attributes: ['registrationNumber', 'vehicleType', 'pricePerDay'],
-          include: [{ model: User, as: 'owner', attributes: ['name', 'email'] }]
+        {
+          model: Vehicle,
+          as: "vehicle",
+          attributes: ["registrationNumber", "vehicleType", "pricePerDay"],
+          include: [
+            { model: User, as: "owner", attributes: ["name", "email"] },
+          ],
         },
-        { 
-          model: User, 
-          as: 'renter',
-          attributes: ['name'] 
-        }
+        {
+          model: User,
+          as: "renter",
+          attributes: ["name"],
+        },
       ],
-      order: [['createdAt', 'ASC']]
+      order: [["createdAt", "ASC"]],
     });
 
     res.status(200).json({ success: true, bookings: pendingBookings });
@@ -248,34 +285,32 @@ exports.getPendingPayouts = async (req, res) => {
   }
 };
 
-
 // Lifetime earnings
 exports.getOwnerEarnings = async (req, res) => {
   try {
     const ownerId = req.user.id;
 
     const stats = await Booking.findAll({
-      include: [{
-        model: Vehicle,
-        as: 'vehicle',
-        where: { userId: ownerId },
-        attributes: []
-      }],
-      where: { paymentStatus: 'paid' },
-      attributes: [
-        'amountReleased',
-        'totalAmount'
-      ]
+      include: [
+        {
+          model: Vehicle,
+          as: "vehicle",
+          where: { userId: ownerId },
+          attributes: [],
+        },
+      ],
+      where: { paymentStatus: "paid" },
+      attributes: ["amountReleased", "totalAmount"],
     });
 
     let totalLifetime = 0;
     let pendingRelease = 0;
     let alreadyReleased = 0;
 
-    stats.forEach(b => {
-      const ownerCut = parseFloat(b.totalAmount) * 0.90;
+    stats.forEach((b) => {
+      const ownerCut = parseFloat(b.totalAmount) * 0.9;
       totalLifetime += ownerCut;
-      
+
       if (b.amountReleased) {
         alreadyReleased += ownerCut;
       } else {
@@ -287,9 +322,9 @@ exports.getOwnerEarnings = async (req, res) => {
       success: true,
       data: {
         totalLifetime,
-        pendingRelease,    
+        pendingRelease,
         alreadyReleased,
-      }
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -302,38 +337,39 @@ exports.getBookingDetailsForRenter = async (req, res) => {
     const userId = req.user.id;
 
     const booking = await Booking.findOne({
-      where: { 
-        bookingId, 
-        renterId: userId 
+      where: {
+        bookingId,
+        renterId: userId,
       },
       include: [
         {
           model: Vehicle,
-          as: 'vehicle',
+          as: "vehicle",
           include: [
-            { 
-              model: Location, 
-              as: 'location'
+            {
+              model: Location,
+              as: "location",
             },
             {
               model: User,
-              as: 'owner',
-              attributes: ['name', 'mobile']
-            }
-          ]
-        }
-      ]
+              as: "owner",
+              attributes: ["name", "mobile"],
+            },
+          ],
+        },
+      ],
     });
 
     if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found." });
     }
 
     res.status(200).json({
       success: true,
-      booking
+      booking,
     });
-
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -342,17 +378,36 @@ exports.getBookingDetailsForRenter = async (req, res) => {
 exports.cancelBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
-    const booking = await Booking.findOne({ where: { bookingId, renterId: req.user.id } });
+    const booking = await Booking.findOne({
+      where: { bookingId, renterId: req.user.id },
+    });
 
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
     if (new Date(booking.startDate) <= new Date()) {
-      return res.status(400).json({ message: "Cannot cancel a trip that has already started." });
+      return res
+        .status(400)
+        .json({ message: "Cannot cancel a trip that has already started." });
     }
 
-    await booking.update({ bookingStatus: 'cancelled' });
+    await booking.update({ bookingStatus: "cancelled" });
 
-    res.status(200).json({ success: true, message: "Booking cancelled successfully. Refund will be processed." });
+    const vehicle = await Vehicle.findByPk(booking.vehicleId);
+
+    // Notify the Owner about the cancellation
+    await Notification.create({
+      userId: vehicle.userId,
+      title: "Booking Cancelled ⚠️",
+      message: `The booking for ${vehicle.registrationNumber} from ${booking.startDate} has been cancelled by the renter.`,
+      type: "BOOKING_CANCELLED",
+    });
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Booking cancelled successfully. Refund will be processed.",
+      });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -360,38 +415,50 @@ exports.cancelBooking = async (req, res) => {
 
 exports.getMyBookings = async (req, res) => {
   try {
-    const userId = req.user.id; 
+    const userId = req.user.id;
 
     const bookings = await Booking.findAll({
       where: { renterId: userId },
       include: [
         {
           model: Vehicle,
-          as: 'vehicle',
-          attributes: ['registrationNumber', 'vehicleType', 'vehicleCondition', 'documentImage'],
+          as: "vehicle",
+          attributes: [
+            "registrationNumber",
+            "vehicleType",
+            "vehicleCondition",
+            "documentImage",
+          ],
           include: [
-            { 
-              model: Location, 
-              as: 'location',
-              attributes: ['locationName', 'city', 'addressLine', 'province', 'latitude', 'longitude'] 
-            }
-          ]
-        }
+            {
+              model: Location,
+              as: "location",
+              attributes: [
+                "locationName",
+                "city",
+                "addressLine",
+                "province",
+                "latitude",
+                "longitude",
+              ],
+            },
+          ],
+        },
       ],
-      order: [['createdAt', 'DESC']] 
+      order: [["createdAt", "DESC"]],
     });
 
     res.status(200).json({
       success: true,
       count: bookings.length,
-      bookings
+      bookings,
     });
   } catch (error) {
     console.error("Error fetching user bookings:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to fetch bookings", 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch bookings",
+      error: error.message,
     });
   }
 };
