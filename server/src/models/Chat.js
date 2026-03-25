@@ -51,6 +51,31 @@ const Chat = {
     }
   },
 
+  getOwnerByBookingId: async (bookingId, currentUserId) => {
+  try {
+    const query = `
+      SELECT u."name" as "ownerName", u."profile_image" as "ownerImage"
+      FROM "Bookings" b
+      JOIN "Vehicles" v ON b."vehicleId" = v."id"
+      JOIN "users" u ON (b."renterId" = u."id" OR v."userId" = u."id")
+      WHERE b."id" = :bookingId
+        AND u."id" != :currentUserId
+      LIMIT 1;
+    `;
+    const result = await sequelize.query(query, {
+      replacements: { 
+        bookingId: parseInt(bookingId), 
+        currentUserId: parseInt(currentUserId) 
+      },
+      type: QueryTypes.SELECT
+    });
+    return result[0] || null;
+  } catch (err) {
+    console.error("Database Error (getOwnerByBookingId):", err);
+    throw err;
+  }
+},
+
   // ── 3. GET MESSENGER INBOX (New) ──
   // Used for the sidebar list (Owner name, image, last message)
   getInbox: async (userId) => {

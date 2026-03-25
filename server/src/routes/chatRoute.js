@@ -24,4 +24,14 @@ router.get("/history/:bookingId", verifyToken, async (req, res) => {
   }
 });
 
+router.get("/owner/:bookingId", verifyToken, async (req, res) => {
+  try {
+    const owner = await Chat.getOwnerByBookingId(req.params.bookingId, req.user.id);
+    if (!owner) return res.status(404).json({ success: false, error: "Owner not found" });
+    res.json({ success: true, owner });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;
