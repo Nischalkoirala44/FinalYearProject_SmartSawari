@@ -1,51 +1,76 @@
 const Location = require("../models/Location");
-
-const { Op } = require("sequelize");
 const Vehicle = require("../models/Vehicle");
-const Booking = require("../models/Booking");
+const { Op, literal } = require("sequelize");
 
 exports.getApprovedVehicles = async (req, res) => {
   try {
+    const { 
+      page = 1, 
+      limit = 8, 
+      search = '', 
+      type = 'All', 
+      city = '', 
+      maxPrice = 50000,
+      sortBy = 'default' 
+    } = req.query;
+
+    const offset = (page - 1) * limit;
     const today = new Date().toISOString().split('T')[0];
 
-    const vehicles = await Vehicle.findAll({
-      where: { status: "approved" },
-      include: [{
-        model: Booking,
-        as: 'bookings',
-        required: false,
-        where: {
-          bookingStatus: 'confirmed',
-          startDate: { [Op.lte]: today },
-          endDate: { [Op.gte]: today }
-        }
-      },
-      {
+    let order = [['created_at', 'DESC']]; 
+    if (sortBy === 'priceLow') order = [['pricePerDay', 'ASC']];
+    if (sortBy === 'priceHigh') order = [['pricePerDay', 'DESC']];
+
+    const vehicleWhere = {
+      status: "approved",
+      pricePerDay: { [Op.lte]: parseFloat(maxPrice) },
+      [Op.and]: [
+        literal(`NOT EXISTS (
+          SELECT 1 FROM "Bookings" AS b 
+          WHERE b."vehicleId" = "Vehicle"."id" 
+          AND b."bookingStatus" = 'confirmed' 
+          AND b."startDate" <= '${today}' 
+          AND b."endDate" >= '${today}'
+        )`)
+      ]
+    };
+
+    if (type !== 'All') vehicleWhere.vehicleType = type;
+    if (search) vehicleWhere.registrationNumber = { [Op.iLike]: `%${search}%` };
+
+    const { count, rows: vehicles } = await Vehicle.findAndCountAll({
+      where: vehicleWhere,
+      include: [
+        {
           model: Location,
           as: 'location',
+          where: city ? { city: { [Op.iLike]: `%${city}%` } } : undefined,
+          required: !!city
         }
-    ],
-      order: [["created_at", "DESC"]],
+      ],
+      order: order,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      distinct: true 
     });
 
-    // Transform data to determine Current Availability
     const vehiclesWithStatus = vehicles.map(vehicle => {
       const v = vehicle.toJSON();
-      const isOccupiedToday = v.bookings && v.bookings.length > 0;
-      
       return {
         ...v,
-        currentAvailability: isOccupiedToday ? "booked" : "available",
-        bookings: undefined 
+        currentAvailability: "available",
       };
     });
 
     res.status(200).json({
       success: true,
-      count: vehiclesWithStatus.length,
+      totalItems: count,
+      totalPages: Math.ceil(count / limit),
+      currentPage: parseInt(page),
       vehicles: vehiclesWithStatus,
     });
   } catch (error) {
+    console.error("Fetch Approved Vehicles Error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -158,21 +183,6 @@ exports.getMyVehicles = async (req, res) => {
       });
     }
 };
-
-/*
-exports.getNotifications = async (req, res) => {
-  try {
-    const notifications = await Notification.findAll({
-      where: { userId: req.user.id }, 
-      order: [["createdAt", "DESC"]],
-    });
-
-    res.json({ success: true, notifications });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-*/
 
 exports.updateVehicle = async (req, res) => {
   try {
