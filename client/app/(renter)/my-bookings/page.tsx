@@ -240,10 +240,10 @@ const MyBookings: React.FC = () => {
               ) : (
                 <div className="animate-in slide-in-from-right duration-400">
                    <div className="flex justify-between items-center mb-6">
-                    <button onClick={() => setShowMap(false)} className="flex items-center gap-2 text-red-600 font-black text-[11px] uppercase tracking-widest hover:translate-x-[-4px] transition-transform">
+                    <button  onClick={() => window.location.reload()} className="flex items-center gap-2 text-red-600 font-black text-[11px] uppercase tracking-widest hover:translate-x-[-4px] transition-transform">
                       <ArrowLeft size={16} strokeWidth={3}/> Return to Manifest
                     </button>
-                    <X size={20} className="text-gray-700 cursor-pointer" onClick={() => setSelectedBooking(null)}/>
+                    <X size={20} className="text-gray-700 cursor-pointer" onClick={() => window.location.reload()}/>
                    </div>
                    
                    {/* Pass coordinates for routing */}
