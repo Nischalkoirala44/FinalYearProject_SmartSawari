@@ -48,7 +48,7 @@ export default function VehicleMarketplace() {
 
     const delayDebounceFn = setTimeout(() => {
       getVehicles();
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, selectedType, maxPrice, sortBy]);
@@ -64,19 +64,7 @@ export default function VehicleMarketplace() {
     return null;
   };
 
-  const displayVehicles = vehicles.filter((v) => {
-    const matchesSearch = v.registrationNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.location?.city?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = selectedType === "All" || v.vehicleType === selectedType;
-    const matchesPrice = Number(v.pricePerDay) <= maxPrice;
-    return matchesSearch && matchesType && matchesPrice;
-  }).sort((a, b) => {
-    if (sortBy === "priceLow") return a.pricePerDay - b.pricePerDay;
-    if (sortBy === "priceHigh") return b.pricePerDay - a.pricePerDay;
-    return 0;
-  });
-
-  if (loading) return <MarketplaceSkeleton />;
+  const displayVehicles = vehicles;
 
   return (
     <div className="flex flex-col flex-1 h-full overflow-hidden bg-[#0b1a27]">

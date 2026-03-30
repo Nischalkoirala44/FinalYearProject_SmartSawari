@@ -123,3 +123,53 @@
     @apply bg-background text-foreground;
   }
 }
+
+.smart-sawari-itinerary.hidden {
+    display: none !important;
+}
+
+/* Style the itinerary as a dark-themed popup */
+.smart-sawari-itinerary {
+    position: absolute !important;
+    top: 85px !important;
+    right: 20px !important;
+    width: 280px !important;
+    max-height: 280px !important;
+    background-color: #0d1f2f !important; 
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 1.5rem !important;
+    padding: 1.25rem !important;
+    font-family: inherit !important;
+    z-index: 1001 !important;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
+    overflow-y: auto !important;
+}
+
+/* Style individual direction rows */
+.leaflet-routing-alt table {
+    width: 100% !important;
+}
+
+.leaflet-routing-alt tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    transition: background 0.2s;
+}
+
+.leaflet-routing-alt tr:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.leaflet-routing-alt td {
+    padding: 8px 4px !important;
+    font-size: 11px !important;
+}
+
+/* Scrollbar Styling */
+.smart-sawari-itinerary::-webkit-scrollbar {
+    width: 4px;
+}
+.smart-sawari-itinerary::-webkit-scrollbar-thumb {
+    background: #ef4444;
+    border-radius: 10px;
+}

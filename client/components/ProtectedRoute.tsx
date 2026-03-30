@@ -22,7 +22,7 @@ export default function ProtectedRoute({
     if (!loading) {
       if (!user) {
         console.log("ProtectedRoute: No user, redirecting to login");
-        router.push("/");
+        router.push("/login");
         return;
       }
 

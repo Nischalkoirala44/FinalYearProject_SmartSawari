@@ -1,67 +1,130 @@
 "use client";
+
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect, useState } from "react";
 import RoutingMachine from "./RoutingMachine";
-import { Timer, Map as MapIcon } from "lucide-react";
+import { Timer, Map as MapIcon, Shield, Navigation } from "lucide-react";
+
+const hubIcon = L.icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const userIcon = L.icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
 
 export default function BookingMap({ destLat, destLng, hubName }: any) {
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
+  const [stableUserPos, setStableUserPos] = useState<[number, number] | null>(null);
   const [summary, setSummary] = useState<{ distance: number; time: number } | null>(null);
+  const [showSteps, setShowSteps] = useState(false);
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
+    const watchId = navigator.geolocation.watchPosition(
       (pos) => setUserPos([pos.coords.latitude, pos.coords.longitude]),
-      (err) => console.error("Location blocked", err)
+      (err) => console.error("Location error", err),
+      { enableHighAccuracy: true }
     );
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
+  const hasMoved = (a: any, b: any) => {
+    if (!a || !b) return true;
+    const dx = a[0] - b[0];
+    const dy = a[1] - b[1];
+    return Math.sqrt(dx * dx + dy * dy) > 0.0003;
+  };
+
+  useEffect(() => {
+    if (userPos && hasMoved(userPos, stableUserPos)) {
+      setStableUserPos(userPos);
+    }
+  }, [userPos, stableUserPos]);
+
+  const toggleSteps = () => {
+    const container = document.querySelector('.smart-sawari-itinerary');
+    if (container) {
+      container.classList.toggle('hidden');
+      setShowSteps(!showSteps);
+    }
+  };
+
   return (
-    <div className="relative h-[450px] w-full rounded-3xl overflow-hidden border-4 border-white shadow-xl">
-      {/* Floating Info Badge */}
+    <div className="relative h-[450px] w-full rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl bg-[#0b1a27]">
+      
+      {/* Floating Summary UI */}
       {summary && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] flex gap-3 bg-white/80 backdrop-blur-md px-6 py-3 rounded-2xl border border-white shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="flex items-center gap-2 border-r pr-3 border-gray-200">
-            <MapIcon size={16} className="text-blue-600" />
-            <span className="text-sm font-black text-gray-900">{summary.distance.toFixed(1)} km</span>
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] flex gap-4 bg-[#0d1f2f]/90 backdrop-blur-xl px-6 py-4 rounded-3xl border border-white/10 shadow-2xl">
+          <div className="flex items-center gap-3 border-r pr-4 border-white/10">
+            <div className="p-2 bg-red-600/20 rounded-lg"><MapIcon size={18} className="text-red-500" /></div>
+            <div>
+              <span className="text-[10px] text-gray-500 uppercase">Range</span>
+              <div className="text-sm font-bold text-white">{summary.distance.toFixed(1)} KM</div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Timer size={16} className="text-emerald-600" />
-            <span className="text-sm font-black text-gray-900">{summary.time} mins</span>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg"><Timer size={18} className="text-emerald-500" /></div>
+            <div>
+              <span className="text-[10px] text-gray-500 uppercase">Arrival</span>
+              <div className="text-sm font-bold text-white">{Math.round(summary.time)} MINS</div>
+            </div>
           </div>
         </div>
       )}
 
-      <MapContainer center={[destLat, destLng]} zoom={13} style={{ height: "100%" }}>
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        
-        {/* Hub Marker */}
-        <Marker position={[destLat, destLng]} icon={L.icon({
-          iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
-          iconSize: [25, 41], iconAnchor: [12, 41],
-        })}>
-          <Popup><b>Pickup: {hubName}</b></Popup>
+      {/* VIEW STEPS TOGGLE BUTTON */}
+      <button 
+        onClick={toggleSteps}
+        className="absolute bottom-6 right-6 z-[1000] bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center gap-2"
+      >
+        <Navigation size={14} fill="currentColor" />
+        {showSteps ? "Close Manifest" : "View Steps"}
+      </button>
+
+      <MapContainer
+        center={[destLat, destLng]}
+        zoom={13}
+        style={{ height: "100%", width: "100%" }}
+        zoomControl={false}
+      >
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+
+        <Marker position={[destLat, destLng]} icon={hubIcon}>
+          <Popup><b>Vehicle Hub: {hubName}</b></Popup>
         </Marker>
 
-        {userPos && (
+        {stableUserPos && (
           <>
-            {/* User Marker */}
-            <Marker position={userPos} icon={L.icon({
-              iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-              iconSize: [25, 41], iconAnchor: [12, 41],
-            })}>
+            <Marker position={stableUserPos} icon={userIcon}>
               <Popup><b>Your Location</b></Popup>
             </Marker>
-
-            <RoutingMachine 
-              userPos={userPos} 
-              destPos={[destLat, destLng]} 
-              onSummaryFetched={setSummary} 
+            <RoutingMachine
+              userPos={stableUserPos}
+              destPos={[destLat, destLng]}
+              onSummaryFetched={setSummary}
             />
           </>
         )}
       </MapContainer>
+
+      <div className="absolute bottom-6 left-6 z-[1000] flex items-center gap-2 px-4 py-2 rounded-full border border-white/5 bg-[#0d1f2f]/50 backdrop-blur-md">
+        <Shield size={12} className="text-red-600" />
+        <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">
+          Smart Sawari Tracking
+        </span>
+      </div>
     </div>
   );
 }

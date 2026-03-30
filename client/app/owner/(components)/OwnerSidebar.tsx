@@ -2,7 +2,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Car, Bell, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Car, Bell, Settings, LogOut, PlusCircle, MapPinPlus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -24,10 +24,10 @@ const Sidebar = () => {
   const menuItems = [
     { name: "Overview", href: "/owner/dashboard", icon: <LayoutDashboard size={22} /> },
     { name: "My Vehicles", href: "/owner/my-vehicles", icon: <Car size={22} /> },
-    { name: "Add Vehicle", href: "/owner/post", icon: <Car size={22} /> },
-    { name: "Add Locations", href: "/owner/addLocation", icon: <Car size={22} /> },
+    { name: "Add Vehicle", href: "/owner/post", icon: <PlusCircle size={22} /> },
+    { name: "Add Locations", href: "/owner/addLocation", icon: <MapPinPlus size={22} /> },
     { name: "Notifications", href: "/owner/notifications", icon: <Bell size={22} /> },
-    { name: "Settings", href: "/profile", icon: <Settings size={22} /> },
+    { name: "Settings", href: "/profile", icon: <Settings size={22} /> }, 
   ];
 
   return (

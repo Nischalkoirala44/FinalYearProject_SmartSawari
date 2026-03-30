@@ -4,22 +4,22 @@ const { Op, literal } = require("sequelize");
 
 exports.getApprovedVehicles = async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 8, 
-      search = '', 
-      type = 'All', 
-      city = '', 
+    const {
+      page = 1,
+      limit = 8,
+      search = "",
+      type = "All",
+      city = "",
       maxPrice = 50000,
-      sortBy = 'default' 
+      sortBy = "default",
     } = req.query;
 
     const offset = (page - 1) * limit;
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
 
-    let order = [['created_at', 'DESC']]; 
-    if (sortBy === 'priceLow') order = [['pricePerDay', 'ASC']];
-    if (sortBy === 'priceHigh') order = [['pricePerDay', 'DESC']];
+    let order = [["created_at", "DESC"]];
+    if (sortBy === "priceLow") order = [["pricePerDay", "ASC"]];
+    if (sortBy === "priceHigh") order = [["pricePerDay", "DESC"]];
 
     const vehicleWhere = {
       status: "approved",
@@ -31,30 +31,36 @@ exports.getApprovedVehicles = async (req, res) => {
           AND b."bookingStatus" = 'confirmed' 
           AND b."startDate" <= '${today}' 
           AND b."endDate" >= '${today}'
-        )`)
-      ]
+        )`),
+      ],
     };
 
-    if (type !== 'All') vehicleWhere.vehicleType = type;
-    if (search) vehicleWhere.registrationNumber = { [Op.iLike]: `%${search}%` };
+    if (type !== "All") vehicleWhere.vehicleType = type;
+    if (search) {
+      vehicleWhere[Op.or] = [
+        { registrationNumber: { [Op.iLike]: `%${search}%` } },
+        { "$location.city$": { [Op.iLike]: `%${search}%` } },
+        { "$location.locationName$": { [Op.iLike]: `%${search}%` } },
+        { vehicleType: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
 
     const { count, rows: vehicles } = await Vehicle.findAndCountAll({
       where: vehicleWhere,
       include: [
         {
           model: Location,
-          as: 'location',
-          where: city ? { city: { [Op.iLike]: `%${city}%` } } : undefined,
-          required: !!city
-        }
+          as: "location",
+          required: true
+        },
       ],
       order: order,
       limit: parseInt(limit),
       offset: parseInt(offset),
-      distinct: true 
+      distinct: true,
     });
 
-    const vehiclesWithStatus = vehicles.map(vehicle => {
+    const vehiclesWithStatus = vehicles.map((vehicle) => {
       const v = vehicle.toJSON();
       return {
         ...v,
@@ -81,12 +87,14 @@ exports.getPublicVehicleById = async (req, res) => {
     const vehicle = await Vehicle.findOne({
       where: {
         id,
-        status: "approved"
-      }
+        status: "approved",
+      },
     });
 
     if (!vehicle) {
-      return res.status(404).json({ success: false, message: "Vehicle not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Vehicle not found" });
     }
 
     res.status(200).json({ success: true, vehicle });
@@ -174,14 +182,13 @@ exports.getMyVehicles = async (req, res) => {
       count: vehicles.length,
       vehicles,
     });
+  } catch (error) {
+    console.error("Error fetching user's vehicles:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
-    catch (error) {
-      console.error("Error fetching user's vehicles:", error);
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
-    }
 };
 
 exports.updateVehicle = async (req, res) => {
@@ -189,33 +196,30 @@ exports.updateVehicle = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
     const files = req.files;
-  
-    const { 
-      vehicleCondition, 
-      pricePerDay, 
-      locationId, 
-      availabilityStatus 
-    } = req.body;
+
+    const { vehicleCondition, pricePerDay, locationId, availabilityStatus } =
+      req.body;
 
     const vehicle = await Vehicle.findOne({ where: { id, userId } });
 
     if (!vehicle) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Vehicle not found or you are not authorized to edit it." 
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found or you are not authorized to edit it.",
       });
     }
 
-    let currentDocs = typeof vehicle.documentImage === 'string' 
-      ? JSON.parse(vehicle.documentImage) 
-      : vehicle.documentImage;
+    let currentDocs =
+      typeof vehicle.documentImage === "string"
+        ? JSON.parse(vehicle.documentImage)
+        : vehicle.documentImage;
 
     if (files && files.vehicleImages) {
       currentDocs = {
         ...currentDocs,
-        vehicleImages: files.vehicleImages.map(f => f.path)
+        vehicleImages: files.vehicleImages.map((f) => f.path),
       };
-      vehicle.changed('documentImage', true);
+      vehicle.changed("documentImage", true);
     }
 
     await vehicle.update({
@@ -231,17 +235,15 @@ exports.updateVehicle = async (req, res) => {
       message: "Vehicle updated successfully",
       vehicle,
     });
-
   } catch (error) {
     console.error("Error updating vehicle:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Update failed", 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: "Update failed",
+      error: error.message,
     });
   }
 };
-
 
 exports.deleteVehicle = async (req, res) => {
   try {
@@ -249,7 +251,7 @@ exports.deleteVehicle = async (req, res) => {
     const userId = req.user.id;
 
     const deleted = await Vehicle.destroy({
-      where: { id, userId }
+      where: { id, userId },
     });
 
     if (!deleted) {
@@ -275,10 +277,10 @@ exports.getVehicleById = async (req, res) => {
     const userId = req.user.id;
 
     const vehicle = await Vehicle.findOne({
-      where: { 
-        id, 
-        userId
-      }
+      where: {
+        id,
+        userId,
+      },
     });
 
     if (!vehicle) {
