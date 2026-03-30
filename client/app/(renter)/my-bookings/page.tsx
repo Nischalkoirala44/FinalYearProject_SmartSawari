@@ -130,7 +130,7 @@ const MyBookings: React.FC = () => {
             {/* TABLE HEADER */}
             <div className="hidden md:grid grid-cols-12 px-8 py-4 text-[10px] font-black uppercase tracking-[0.3em] text-gray-600">
               <div className="col-span-5">Machine & Reference</div>
-              <div className="col-span-3">Deployment Window</div>
+              <div className="col-span-3">Booking Date</div>
               <div className="col-span-2">Amount</div>
               <div className="col-span-2 text-right">Status</div>
             </div>
@@ -227,9 +227,6 @@ const MyBookings: React.FC = () => {
                          <Navigation size={16} fill="currentColor"/> View Live Route
                        </button>
                        <div className="flex gap-4">
-                        <button onClick={() => window.print()} className="flex-1 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center hover:bg-white/10 transition-all">
-                          <Printer size={18}/>
-                        </button>
                         <button onClick={() => setSelectedBooking(null)} className="flex-1 bg-white text-black py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-gray-200">
                           Close
                         </button>

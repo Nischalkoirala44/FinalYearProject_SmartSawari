@@ -58,16 +58,13 @@ export default function VehicleMarketplace() {
     try {
       const data = typeof docImage === "string" ? JSON.parse(docImage) : docImage;
       if (data.vehicleImages?.length > 0) return data.vehicleImages[0];
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
     return null;
   };
 
-  const displayVehicles = vehicles;
-
   return (
-    <div className="flex flex-col flex-1 h-full overflow-hidden bg-[#0b1a27]">
+    <div className="flex flex-col flex-1 bg-[#0b1a27]">
+      
       {/* SEARCH + FILTER BAR */}
       <div className="sticky top-0 z-40 bg-[#0a1620]/95 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 flex flex-col gap-4">
@@ -118,8 +115,9 @@ export default function VehicleMarketplace() {
                   <button
                     key={type}
                     onClick={() => setSelectedType(type)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition ${selectedType === type ? "bg-red-600 text-white" : "bg-[#0b1a27] border border-white/10 text-gray-400"
-                      }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition ${
+                      selectedType === type ? "bg-red-600 text-white" : "bg-[#0b1a27] border border-white/10 text-gray-400"
+                    }`}
                   >
                     <span>{VEHICLE_ICONS[type] ?? "🚗"}</span> {type}
                   </button>
@@ -143,112 +141,99 @@ export default function VehicleMarketplace() {
         </div>
       </div>
 
-      {/*  MAIN CONTENT */}
-      <main className="flex-1 overflow-y-auto bg-[#0b1a27] custom-scrollbar">
-        <div className="px-4 sm:px-6 md:px-8 py-6 md:py-8">
-          <div className="mb-8">
-            <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-white uppercase italic leading-none">
-              Available <span className="text-red-600">Fleet</span>
-            </h2>
-            <p className="text-xs text-gray-500 mt-1.5 font-medium uppercase tracking-widest">
-              {displayVehicles.length} units ready for deployment
-            </p>
-          </div>
+      {/* MAIN CONTENT - Removed overflow-y-auto to let the layout handle scrolling */}
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 md:px-8 py-8">
+        <div className="mb-8">
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-white uppercase italic leading-none">
+            Available <span className="text-red-600">Fleet</span>
+          </h2>
+          <p className="text-xs text-gray-500 mt-1.5 font-medium uppercase tracking-widest">
+            {loading ? "Syncing..." : `${vehicles.length} units ready for deployment`}
+          </p>
+        </div>
 
-          {displayVehicles.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {displayVehicles.map((vehicle) => {
-                const mainImage = getVehicleThumbnail(vehicle.documentImage);
-                const accent = TYPE_ACCENT[vehicle.vehicleType] ?? "#ef4444";
-                const pillStyle = TYPE_PILL[vehicle.vehicleType] ?? TYPE_PILL.Car;
+        {loading ? (
+          <MarketplaceSkeleton />
+        ) : vehicles.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {vehicles.map((vehicle) => {
+              const mainImage = getVehicleThumbnail(vehicle.documentImage);
+              const accent = TYPE_ACCENT[vehicle.vehicleType] ?? "#ef4444";
+              const pillStyle = TYPE_PILL[vehicle.vehicleType] ?? TYPE_PILL.Car;
 
-                return (
-                  <div
-                    key={vehicle.id}
-                    className="group relative flex flex-col bg-[#0d1f2f] rounded-[2rem] overflow-hidden border border-white/5 transition-all duration-500 hover:border-white/20 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,0,0,0.6)]"
-                    style={{ "--glow-color": `${accent}33` } as any}
-                  >
-                    {/* IMAGE SECTION: "THE FULL STAGE" */}
-                    <div className="relative w-full h-[280px] bg-[#07111a] overflow-hidden">
-                      {/* Background Glow */}
-                      <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,_var(--glow-color)_0%,_transparent_80%)]" />
+              return (
+                <div
+                  key={vehicle.id}
+                  className="group relative flex flex-col bg-[#0d1f2f] rounded-[2rem] overflow-hidden border border-white/5 transition-all duration-500 hover:border-white/20 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,0,0,0.6)]"
+                  style={{ "--glow-color": `${accent}33` } as any}
+                >
+                  <div className="relative w-full h-[240px] bg-[#07111a] overflow-hidden">
+                    <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,_var(--glow-color)_0%,_transparent_80%)]" />
+                    {mainImage ? (
+                      <Image
+                        src={mainImage} alt="Vehicle" fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-8xl opacity-10">
+                        {VEHICLE_ICONS[vehicle.vehicleType]}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d1f2f] via-transparent to-transparent opacity-90" />
+                    <div className="absolute top-4 left-4 z-10">
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-xl text-[9px] font-black uppercase tracking-widest shadow-2xl ${pillStyle}`}>
+                        {vehicle.vehicleType}
+                      </div>
+                    </div>
+                  </div>
 
-                      {mainImage ? (
-                        <Image
-                          src={mainImage}
-                          alt="Vehicle"
-                          fill
-                          className="object-cover transition-transform duration-700 group-hover:scale-110"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-8xl opacity-10">
-                          {VEHICLE_ICONS[vehicle.vehicleType]}
-                        </div>
-                      )}
-
-                      {/* CINEMATIC OVERLAYS */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0d1f2f] via-transparent to-transparent opacity-90" />
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent opacity-50" />
-
-                      {/* TYPE BADGE */}
-                      <div className="absolute top-5 left-5 z-10">
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl ${pillStyle}`}>
-                          {vehicle.vehicleType}
-                        </div>
+                  <div className="px-6 py-5 flex flex-col flex-1 bg-[#0d1f2f]">
+                    <div className="mb-4">
+                      <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-tight mb-1 truncate">
+                        {vehicle.registrationNumber}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <MapPin size={12} style={{ color: accent }} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                          {vehicle.location?.city || "Nepal"}
+                        </span>
                       </div>
                     </div>
 
-                    {/* DETAILS SECTION */}
-                    <div className="px-7 py-6 flex flex-col flex-1 bg-[#0d1f2f]">
-                      <div className="mb-5">
-                        <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none mb-2">
-                          {vehicle.registrationNumber}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <MapPin size={14} style={{ color: accent }} />
-                          <span className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                            {vehicle.location?.city || "Nepal"}
+                    <div className="h-px w-full bg-gradient-to-r from-white/10 via-white/5 to-transparent mb-5" />
+
+                    <div className="flex items-center justify-between mt-auto">
+                      <div>
+                        <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest block mb-1">Rate / Day</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xs font-bold text-gray-400">Rs.</span>
+                          <span className="text-2xl font-black text-white italic">
+                            {Number(vehicle.pricePerDay).toLocaleString()}
                           </span>
                         </div>
                       </div>
 
-                      {/* SPACER / DIVIDER */}
-                      <div className="h-px w-full bg-gradient-to-r from-white/10 via-white/5 to-transparent mb-6" />
-
-                      {/* PRICING & ACTION */}
-                      <div className="flex items-center justify-between mt-auto">
-                        <div>
-                          <span className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] block mb-1">Rate / Day</span>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-sm font-bold text-gray-400">Rs.</span>
-                            <span className="text-3xl font-black text-white italic">
-                              {Number(vehicle.pricePerDay).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-
-                        <Link
-                          href={`/book/${vehicle.id}`}
-                          className="group/btn relative flex items-center justify-center w-16 h-16 rounded-[1.5rem] transition-all duration-300 hover:rotate-6 active:scale-90 shadow-2xl"
-                          style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}
-                        >
-                          <ArrowRight size={28} className="text-white group-hover/btn:translate-x-1 transition-transform" />
-                        </Link>
-                      </div>
+                      <Link
+                        href={`/book/${vehicle.id}`}
+                        className="group/btn relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 hover:rotate-6 active:scale-90 shadow-2xl"
+                        style={{ background: `linear-gradient(135deg, ${accent}, ${accent}aa)` }}
+                      >
+                        <ArrowRight size={20} className="text-white group-hover/btn:translate-x-1 transition-transform" />
+                      </Link>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-32 text-center">
-              <Search size={40} className="text-gray-800 mb-4" />
-              <h3 className="text-xl font-black text-white uppercase tracking-widest">No Matches Found</h3>
-              <p className="text-xs text-gray-600 mt-2 uppercase font-bold">Try adjusting filters or search query</p>
-            </div>
-          )}
-        </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <Search size={40} className="text-gray-800 mb-4" />
+            <h3 className="text-xl font-black text-white uppercase tracking-widest">No Matches Found</h3>
+            <p className="text-xs text-gray-600 mt-2 uppercase font-bold">Try adjusting filters</p>
+          </div>
+        )}
       </main>
     </div>
   );
@@ -256,9 +241,10 @@ export default function VehicleMarketplace() {
 
 function MarketplaceSkeleton() {
   return (
-    <div className="flex-1 bg-[#0b1a27] flex flex-col items-center justify-center h-[80vh]">
-      <div className="w-12 h-12 rounded-full border-2 border-red-900/20 border-t-red-600 animate-spin mb-4" />
-      <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Syncing Fleet</p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="h-[400px] bg-[#0d1f2f] rounded-[2rem] border border-white/5" />
+      ))}
     </div>
   );
 }
