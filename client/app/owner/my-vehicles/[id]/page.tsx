@@ -132,7 +132,7 @@ export default function EditVehiclePage() {
                 Update <span className="text-red-600">Configuration</span>
               </h1>
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-3">
-                Asset ID: <span className="text-gray-400">#SW-{id?.toString().slice(-4).toUpperCase()}</span>
+              <span className="text-gray-400"></span>
               </p>
             </header>
             

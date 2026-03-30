@@ -70,10 +70,6 @@ const Sidebar = () => {
                 {item.icon}
               </span>
               <span className="text-[11px] font-black uppercase tracking-widest italic">{item.name}</span>
-              
-              {isActive && (
-                <div className="ml-auto w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-              )}
             </Link>
           );
         })}

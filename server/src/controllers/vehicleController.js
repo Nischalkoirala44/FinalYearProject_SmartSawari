@@ -23,6 +23,7 @@ exports.getApprovedVehicles = async (req, res) => {
 
     const vehicleWhere = {
       status: "approved",
+      availabilityStatus: "available",
       pricePerDay: { [Op.lte]: parseFloat(maxPrice) },
       [Op.and]: [
         literal(`NOT EXISTS (

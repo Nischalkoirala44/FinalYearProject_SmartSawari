@@ -3,6 +3,7 @@
 import { useAuth } from "../../../context/AuthContext";
 import { Bell} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import NotificationBell from "@/components/NotificationBell";
 
 const Header = () => {
   const { user } = useAuth();
@@ -30,10 +31,7 @@ const Header = () => {
       {/* Action Icons & User Profile Section */}
       <div className="flex items-center gap-6">
         {/* Notifications */}
-        <button className="relative p-2 text-gray-500 hover:text-red-600 transition-colors group">
-          <Bell size={20} className="group-hover:rotate-12 transition-transform" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-600 rounded-full border-2 border-[#0d1f2f]" />
-        </button>
+        <NotificationBell />
 
         <div className="h-8 w-[1px] bg-white/5" />
 

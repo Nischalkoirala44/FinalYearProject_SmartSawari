@@ -143,12 +143,33 @@ export default function MyVehiclesPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2 mb-6">
-                      <MapPin size={12} className="text-red-600" />
-                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                        {vehicle.registrationNumber}
-                      </span>
-                    </div>
+                    <div className="flex items-center justify-between mb-6 group/status">
+  {/* Left Side: Registration Identifer */}
+  <div className="flex items-center gap-2">
+    <MapPin size={12} className="text-red-600 group-hover/status:animate-pulse" />
+    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] italic">
+      {vehicle.registrationNumber}
+    </span>
+  </div>
+
+  {/* Right Side: Dynamic Availability Status */}
+  <div className="flex items-center gap-2">
+    {/* Status Light */}
+    <div className={`${
+      vehicle.availabilityStatus?.toLowerCase() === 'available' 
+        ? "bg-emerald-500 shadow-emerald-500/50" 
+        : "bg-red-600 shadow-red-600/50"
+    }`} />
+    
+    <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${
+      vehicle.availabilityStatus?.toLowerCase() === 'available' 
+        ? "text-emerald-500" 
+        : "text-red-600"
+    }`}>
+      {vehicle.availabilityStatus}
+    </span>
+  </div>
+</div>
 
                     <div className="h-px w-full bg-gradient-to-r from-white/10 to-transparent mb-6" />
 
