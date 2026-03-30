@@ -118,8 +118,6 @@ export default function ProfilePage() {
           {/* Header Section */}
           <div className="mb-12 border-b border-gray-800 pb-10">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">System Configuration</span>
             </div>
             <h1 className="text-6xl font-black tracking-tighter uppercase text-white leading-none">
               Account <span className="text-red-600">Profile</span>
