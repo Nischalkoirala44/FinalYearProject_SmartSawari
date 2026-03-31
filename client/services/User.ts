@@ -66,7 +66,21 @@ export const updatePassword = async (
     const data = await res.json();
     throw new Error(data.message || "Failed to update password");
   }
-
   return true;
+};
+
+export const getProfile = async (token: string): Promise<User> => {
+  const res = await fetch(`${API_URL}/api/user/getprofile`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+    credentials: "include",
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Failed to fetch profile");
+  
+  return data.user as User;
 };
 

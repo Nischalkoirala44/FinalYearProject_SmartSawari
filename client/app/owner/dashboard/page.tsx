@@ -141,7 +141,7 @@ export default function OwnerEarnings() {
               <div className="flex items-baseline gap-3 mb-12">
                 <span className="text-xl font-black text-red-600 italic uppercase">Rs.</span>
                 <h2 className="text-7xl md:text-8xl font-black tracking-tighter italic">
-                  {stats?.availableBalance?.toLocaleString() ?? "0"}
+                  {stats?.pendingAmount?.toLocaleString() ?? "0"}
                 </h2>
               </div>
 

@@ -9,8 +9,9 @@ import {
   User, ShieldCheck, Mail, Smartphone, ArrowRight 
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { uploadProfilePicture, updateProfile, updatePassword } from "../../../services/User";
+import { uploadProfilePicture, updateProfile, updatePassword, getProfile } from "../../../services/User";
 import LayoutWrapper from "@/components/LayoutWrapper";
+import toast from "react-hot-toast";
 
 export default function ProfilePage() {
   const { user, token, updateUser } = useAuth();
@@ -37,6 +38,21 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
+    const fetchLatestData = async () => {
+      if (!token) return;
+      
+      try {
+        const freshUser = await getProfile(token);
+        updateUser(freshUser); 
+      } catch (err) {
+        console.error("Failed to sync latest profile:", err);
+      }
+    };
+
+    fetchLatestData();
+  }, [token, updateUser]);
+
+  useEffect(() => {
     setUserData({
       name: user?.name || "",
       email: user?.email || "",
@@ -44,6 +60,8 @@ export default function ProfilePage() {
       esewaMobile: user?.esewaMobile || "",
     });
   }, [user]);
+
+  console.log("USER_FROM_CONTEXT:", user);
 
   /* ================= HANDLERS ================= */
 
@@ -83,10 +101,10 @@ export default function ProfilePage() {
       } else {
         updateUser(profileRes);
       }
-      alert("Profile updated successfully!");
+      toast.success("Profile updated successfully!");
       setIsImageRemoved(false);
     } catch (err: any) {
-      alert(err.message || "Failed to update profile");
+      toast.error(err.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }
@@ -109,6 +127,8 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+
+  console.log("AUTH_USER_OBJECT:", userData);
 
   return (
     <LayoutWrapper>
@@ -224,7 +244,7 @@ export default function ProfilePage() {
                         <span className="bg-red-600/10 text-red-500 text-[8px] font-black px-2 py-1 rounded uppercase tracking-widest">Linked</span>
                       </div>
                       <Input
-                        placeholder="98XXXXXXXX"
+                        
                         value={userData.esewaMobile}
                         onChange={(e) => setUserData({ ...userData, esewaMobile: e.target.value })}
                         className="bg-[#0a1620] border-gray-800 rounded-2xl h-16 px-6 text-base font-black tracking-[0.2em] focus:border-red-600 transition-all text-white"

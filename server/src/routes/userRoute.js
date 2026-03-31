@@ -8,6 +8,7 @@ const {
   updateProfile,
   updatePassword,
   uploadProfilePicture,
+  getProfile
 } = require("../controllers/userController");
 
 router.post("/register", registerUser);
@@ -27,5 +28,7 @@ router.post(
   upload.single("profileImage"),
   uploadProfilePicture
 );
+
+router.get('/getprofile', authenticateUser, getProfile);
 
 module.exports = router;

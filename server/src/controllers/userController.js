@@ -50,7 +50,7 @@ const uploadProfilePicture = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
-    const profileImageUrl = req.file.path; // How?????
+    const profileImageUrl = req.file.path;
     await User.update(
       { profileImage: profileImageUrl },
       { where: { id: req.user.id } }
@@ -75,18 +75,14 @@ const handleProfileUpload = async (file, userId) => {
 
 const updateProfile = async (req, res) => {
   try {
-    // 1. Added esewaMobile here
     const { name, email, mobile, esewaMobile } = req.body;
 
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (name) user.name = name;
-    if (email) user.email = email;
-    if (mobile) user.mobile = mobile;
-    
-    // 2. Allow updating the eSewa payout number
-    if (esewaMobile) user.esewaMobile = esewaMobile;
+    if (name !== undefined) user.name = name;
+    if (email !== undefined) user.email = email;
+    if (mobile !== undefined) user.mobile = mobile;
+    if (esewaMobile !== undefined) user.esewaMobile = esewaMobile;
 
     if (req.file) {
       const profileImageUrl = await handleProfileUpload(req.file, req.user.id);
@@ -149,9 +145,32 @@ const updatePassword = async (req, res) => {
   }
 };
 
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    return res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+        esewaMobile: user.esewaMobile,
+        role: user.role,
+        profileImage: user.profileImage,
+        earningsBalance: user.earningsBalance
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   registerUser,
   updateProfile,
   updatePassword,
   uploadProfilePicture,
+  getProfile
 };
