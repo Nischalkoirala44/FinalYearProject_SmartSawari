@@ -63,10 +63,6 @@ const Header = () => {
                 {getInitial()}
               </AvatarFallback>
             </Avatar>
-
-            {/* Status Indicator */}
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#0d1f2f] rounded-full flex items-center justify-center border border-white/5">
-            </div>
           </div>
         </div>
       </div>

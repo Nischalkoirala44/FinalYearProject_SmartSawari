@@ -1,4 +1,3 @@
-// components/ProtectedRoute.tsx
 "use client";
 
 import { useEffect } from "react";
@@ -27,7 +26,6 @@ export default function ProtectedRoute({
       }
 
       if (allowedRoles && !allowedRoles.includes(user.role)) {
-        console.log("ProtectedRoute: Role not allowed → redirecting");
         router.push("/unauthorized");
         return;
       }
@@ -35,8 +33,10 @@ export default function ProtectedRoute({
   }, [user, loading, router, allowedRoles]);
 
   if (loading) return <Spinner />;
-
   if (!user) return null;
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return null; 
+  }
 
   return <>{children}</>;
 }

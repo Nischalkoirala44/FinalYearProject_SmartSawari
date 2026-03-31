@@ -82,7 +82,7 @@ const AddLocationForm: React.FC = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Hub established successfully");
-            // Optional: router.push('/owner/hubs')
+            
         } catch (err) {
             console.error(err);
             toast.error("Failed to establish hub");
@@ -185,13 +185,13 @@ const AddLocationForm: React.FC = () => {
                                 type="button" 
                                 onClick={handleGetCurrentLocation}
                                 disabled={loadingLocation}
-                                className="absolute top-6 right-6 z-[40] flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-700 transition-all active:scale-95 disabled:opacity-50"
+                                className="absolute top-6 right-6 z-[1000] flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-700 transition-all active:scale-95 disabled:opacity-50"
                             >
                                 <Navigation size={14} fill="currentColor" className={loadingLocation ? "animate-ping" : ""} />
                                 {loadingLocation ? "Scanning..." : "Acquire GPS"}
                             </button>
 
-                            <div className="h-96 w-full rounded-[2rem] overflow-hidden border-2 border-white/5 shadow-inner relative group-hover:border-red-600/20 transition-all duration-500">
+                            <div className="h-96 w-full relative z-[1] rounded-[2rem] overflow-hidden border-2 border-white/5 shadow-inner relative group-hover:border-red-600/20 transition-all duration-500">
                                 <MapComponent position={position} setPosition={setPosition} setFormData={setFormData} />
                             </div>
                         </div>
