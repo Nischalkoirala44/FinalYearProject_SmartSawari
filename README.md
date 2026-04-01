@@ -1,4 +1,4 @@
-# 🏎️ Smart Sawari - Fleet Management System
+# 🏎️ Smart Sawari
 
 **Smart Sawari** is a premium, peer-to-peer vehicle rental platform designed for the Nepali market. This dashboard allows vehicle owners to manage their fleet assets with a high-performance, cinematic user interface.
 
