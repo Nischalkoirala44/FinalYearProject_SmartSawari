@@ -174,7 +174,23 @@ export default function VerificationFormContent() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!formData.registrationNumber || !formData.locationId) return toast.error("Deployment Parameters Missing");
+
+    const { registrationNumber, vehicleType, vehicleCondition, pricePerDay, locationId } = formData;
+
+    if (!registrationNumber || !vehicleType || !vehicleCondition || !pricePerDay || !locationId) {
+    return toast.error("Deployment Parameters Missing: All text fields are required.");
+  }
+
+  if (parseFloat(pricePerDay) <= 0) {
+    return toast.error("Financial Error: Target yield must be a positive number.");
+  }
+
+  if (formData.license.length === 0) return toast.error("Missing: Driving License is mandatory.");
+  if (formData.citizenship.length === 0) return toast.error("Missing: Citizenship ID is mandatory.");
+  if (formData.bluebook.length === 0) return toast.error("Missing: Bluebook Pages are mandatory.");
+  if (formData.selfie.length === 0) return toast.error("Missing: Operator Selfie is mandatory.");
+  if (formData.vehicleImages.length === 0) return toast.error("Missing: At least one vehicle image is required.");
+
     setIsLoading(true);
     
     try {
