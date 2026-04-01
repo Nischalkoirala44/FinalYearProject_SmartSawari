@@ -40,7 +40,7 @@ Monitor all registered vehicles in a responsive grid layout. Each asset card dis
 ### 1. Prerequisites
 Ensure you have the following installed:
 * Node.js (v18+)
-* npm or yarn
+* npm
 
 ### 2. Installation
 Clone the repository and install dependencies:
