@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
-  LayoutDashboard, Car, Bell, Settings, LogOut, 
-  PlusCircle, MapPinPlus, ShieldAlert, Activity 
+  LayoutDashboard, Car, MessageCircle, Settings, LogOut, 
+  PlusCircle, MapPinPlus
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-hot-toast";
@@ -28,6 +28,7 @@ const Sidebar = () => {
     { name: "Deploy Vehicle", href: "/owner/post", icon: <PlusCircle size={20} /> },
     { name: "Establish Hub", href: "/owner/addLocation", icon: <MapPinPlus size={20} /> },
     { name: "Operator Profile", href: "/profile", icon: <Settings size={20} /> }, 
+    { name: "Chat", href: "/chat", icon: <MessageCircle size={20} /> }, 
   ];
 
   return (

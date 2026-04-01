@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import SmartChat from "@/components/ChatWindow";
 import { Search, MessageSquare, User, Shield, Loader2 } from "lucide-react";
 import Image from "next/image";
-import LayoutWrapper from "@/components/LayoutWrapper";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function MessengerPage() {
   const { user, token } = useAuth();
@@ -44,17 +44,11 @@ export default function MessengerPage() {
     fetchInbox();
   }, [token]);
 
-  if (!user) return (
-    <div className="flex h-full items-center justify-center text-white font-black uppercase tracking-widest">
-      Access Denied // Please Login
-    </div>
-  );
-
   return (
-    <LayoutWrapper>
+    <ProtectedRoute allowedRoles={["owner", "renter"]}>
       <div className="flex flex-1 h-screen bg-[#0a1620] border border-gray-800 rounded-2xl overflow-hidden">
 
-        {/* ── LEFT SIDEBAR: INBOX ── */}
+        {/* LEFT SIDEBAR: INBOX */}
         <aside className="w-20 md:w-80 border-r border-gray-800 flex flex-col bg-[#0e1f2e] shrink-0">
           <div className="p-4 md:p-6 border-b border-gray-800">
             <h2 className="hidden md:block text-xl font-black uppercase tracking-tighter text-white mb-4">Messages</h2>
@@ -152,6 +146,6 @@ export default function MessengerPage() {
           )}
         </main>
       </div>
-    </LayoutWrapper>
+    </ProtectedRoute>
   );
 }

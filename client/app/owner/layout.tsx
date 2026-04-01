@@ -1,6 +1,7 @@
 // src/app/dashboard/layout.tsx
 import Sidebar from "./(components)/OwnerSidebar";
 import Header from "./(components)/OwnerHeader";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function DashboardLayout({
   children,
@@ -8,8 +9,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
+
+    <ProtectedRoute allowedRoles={["owner"]}>
+   
     <div className="flex h-screen w-full bg-[#0b1a27] overflow-hidden">
-      {/* Fixed Sidebar */}
+      {/* Sidebar */}
       <Sidebar />
 
       <div className="flex flex-col flex-1 min-w-0">
@@ -24,5 +28,6 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+     </ProtectedRoute>
   );
 }
