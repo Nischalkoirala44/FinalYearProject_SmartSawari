@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { Car, Menu, X, LogOut, User, Settings, LayoutDashboard } from "lucide-react";
+import { Car, Menu, X, LogOut, User, Settings, MessageCircleIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -22,7 +22,7 @@ import NotificationBell from "./NotificationBell";
 export default function Navbar() {
     const { user, logout, loading } = useAuth();
     const router = useRouter();
-    const pathname = usePathname(); // For active link detection
+    const pathname = usePathname();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const handleLogout = async () => {
@@ -125,14 +125,8 @@ export default function Navbar() {
                                         </DropdownMenuLabel>
                                         <DropdownMenuSeparator className="bg-gray-700" />
                                         <DropdownMenuItem asChild className="focus:bg-white/5 focus:text-white cursor-pointer py-3">
-                                            <Link href={getDashboardLink()} className="flex items-center">
-                                                <LayoutDashboard className="mr-3 h-4 w-4 text-red-500" />
-                                                <span>Dashboard</span>
-                                            </Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem asChild className="focus:bg-white/5 focus:text-white cursor-pointer py-3">
                                             <Link href="/chat" className="flex items-center">
-                                                <LayoutDashboard className="mr-3 h-4 w-4 text-red-500" />
+                                                <MessageCircleIcon className="mr-3 h-4 w-4" />
                                                 <span>Chat</span>
                                             </Link>
                                         </DropdownMenuItem>

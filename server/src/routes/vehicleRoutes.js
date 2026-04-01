@@ -2,12 +2,12 @@ const {
   getApprovedVehicles,
   getApprovedVehicleById,
   getPublicVehicleById,
-  getNotifications,
   getRejectedVehicles,
   getVehicleById
 } = require("../controllers/vehicleController");
 const { getMyVehicles } = require("../controllers/vehicleController");
 const { updateVehicle } = require("../controllers/vehicleController");
+const { deleteVehicle } = require("../controllers/vehicleController")
 const express = require("express");
 const router = express.Router();
 const authenticateUser = require("../middleware/authMiddleware");
@@ -47,5 +47,11 @@ router.put(
   upload.fields([{ name: "vehicleImages", maxCount: 5 }]),
   updateVehicle,
 );
+
+router.delete(
+  "/delete/:id",
+  authenticateUser,
+  deleteVehicle,
+)
 
 module.exports = router;

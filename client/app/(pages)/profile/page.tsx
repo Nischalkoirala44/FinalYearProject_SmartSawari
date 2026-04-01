@@ -113,16 +113,16 @@ export default function ProfilePage() {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("New passwords do not match!");
+      toast.error("New password and confirmation do not match");
       return;
     }
     setLoading(true);
     try {
       await updatePassword(passwordData, token!);
-      alert("Password updated successfully!");
+      toast.success("Password updated successfully!");
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err: any) {
-      alert(err.message || "Failed to update password");
+      toast.error(err.message || "Failed to update password");
     } finally {
       setLoading(false);
     }

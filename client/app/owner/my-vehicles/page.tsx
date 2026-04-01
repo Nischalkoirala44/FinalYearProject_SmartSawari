@@ -39,7 +39,7 @@ export default function MyVehiclesPage() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3001/api/vehicles/${id}`, {
+      await axios.delete(`http://localhost:3001/api/vehicles/delete/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setVehicles(vehicles.filter((v: any) => v.id !== id));
