@@ -3,12 +3,38 @@ import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Sidebar from "@/app/owner/(components)/OwnerSidebar";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react"; // Assuming you have lucide-react
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-  // 1. OWNER/ADMIN LAYOUT (Professional Dashboard)
-  if (user?.role === "owner") {
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log("LayoutWrapper: No user, redirecting to login");
+      router.push("/login");
+    }
+  }, [user, loading, router]);
+
+  // Handle Loading State
+  if (loading) {
+    return (
+      <div className="h-screen w-full bg-[#0a1620] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="animate-spin text-red-600" size={40} />
+        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">
+          Authenticating Session...
+        </span>
+      </div>
+    );
+  }
+
+  // Return nothing if no user
+  if (!user) return null;
+
+  // OWNER LAYOUT
+  if (user.role === "owner") {
     return (
       <div className="flex h-screen w-full bg-[#0a1620] overflow-hidden">
         <Sidebar /> 
@@ -19,27 +45,14 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     );
   }
 
-  // 2. RENTER LAYOUT (Cinematic/Dark Mode)
-  if (user?.role === "renter") {
-    return (
-      <div className="flex flex-col min-h-screen bg-[#0a1620]">
-        <Navbar />
-        {/* Removed the white rounded-[2.5rem] box and the gray-50 background */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-10">
-           {children}
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  // 3. FALLBACK
+  // RENTER LAYOUT (Default fallback)
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-[#0a1620] text-white">
-      <div className="text-center">
-        <h2 className="text-4xl font-black uppercase tracking-widest mb-4">404</h2>
-        <p className="text-gray-500 font-bold uppercase tracking-tighter">System Access Denied</p>
-      </div>
+    <div className="flex flex-col min-h-screen bg-[#0a1620]">
+      <Navbar />
+      <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-10">
+         {children}
+      </main>
+      <Footer />
     </div>
   );
 }
