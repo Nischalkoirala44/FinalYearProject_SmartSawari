@@ -43,13 +43,20 @@ export default function BookingPage({ params }: { params: Promise<{ id: string }
         setVehicle(data.vehicle);
         if (data.vehicle?.id && token) {
           try {
-            const ownerRes = await fetch(`${API_URL}/api/chat/owner/${data.vehicle.id}`, {
-              headers: { "Authorization": `Bearer ${token}` }
-            });
-            const ownerData = await ownerRes.json();
-            if (ownerData.success) setOwner(ownerData.owner);
-            console.log("Owner data:", ownerData);
-          } catch { /* Fail silently */ }
+  const ownerRes = await fetch(`${API_URL}/api/chat/owner/${data.vehicle.id}`, {
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  const ownerData = await ownerRes.json();
+  
+  if (ownerData.success) {
+    setOwner({
+      ownerName: ownerData.owner.name, 
+      ownerImage: ownerData.owner.profile_image
+    });
+  }
+} catch (err) {
+  console.error("Owner fetch failed:", err);
+}
         }
         if (data.vehicle?.locationId) {
           try {

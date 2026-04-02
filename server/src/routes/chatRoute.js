@@ -35,4 +35,7 @@ router.put("/message/:messageId", verifyToken, chatController.updateMessage);
 // POST: Mark messages in a booking as seen
 router.post("/seen/:bookingId", verifyToken, chatController.markSeen);
 
+// DELETE: Clear all messages in a specific chat
+router.delete("/clear/:bookingId", verifyToken, chatController.deleteAllChat);
+
 module.exports = router;

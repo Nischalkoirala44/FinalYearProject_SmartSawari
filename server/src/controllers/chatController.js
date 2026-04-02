@@ -32,7 +32,7 @@ const updateMessage = async (req, res) => {
       result = await Chat.deleteMessage(messageId, userId);
     }
 
-    // Optional: if (!result) return res.status(404).json({ message: "Unauthorized or not found" });
+    if (!result) return res.status(404).json({ message: "Unauthorized or not found" });
 
     res.json(result);
   } catch (err) {
@@ -50,4 +50,16 @@ const markSeen = async (req, res) => {
   }
 };
 
-module.exports = { getChatHistory, saveMessageInternal, updateMessage, markSeen };
+const deleteAllChat = async (req, res) => {
+  const { bookingId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const result = await Chat.deleteAllMessages(bookingId, userId);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+module.exports = { getChatHistory, saveMessageInternal, updateMessage, markSeen, deleteAllChat };

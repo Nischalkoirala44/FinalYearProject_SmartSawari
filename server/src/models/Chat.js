@@ -1,8 +1,8 @@
-const sequelize = require("../config/db"); 
+const sequelize = require("../config/db");
 const { QueryTypes } = require("sequelize");
 
 const Chat = {
-  // GET CHAT HISTORY 
+  // GET CHAT HISTORY
   findByBookingId: async (bookingId) => {
     const query = `
       SELECT m.*, u.name as sender_name, u.profile_image 
@@ -13,11 +13,33 @@ const Chat = {
     `;
     return await sequelize.query(query, {
       replacements: { bookingId: parseInt(bookingId) },
-      type: QueryTypes.SELECT
+      type: QueryTypes.SELECT,
     });
   },
 
-  // MARK AS SEEN (WhatsApp "Blue Ticks" logic)
+  // GET OWNER BY BOOKING ID
+  getOwnerByBookingId: async (bookingId) => {
+    try {
+      const query = `
+        SELECT u.id, u.name, u.email, u.profile_image
+        FROM "Bookings" b
+        JOIN "Vehicles" v ON b."vehicleId" = v."id"
+        JOIN "users" u ON v."userId" = u.id
+        WHERE b.id = :bookingId;
+      `;
+      const result = await sequelize.query(query, {
+        replacements: { bookingId: parseInt(bookingId) },
+        type: QueryTypes.SELECT,
+      });
+
+      return result[0];
+    } catch (err) {
+      console.error("Database Error (getOwnerByBookingId):", err);
+      throw err;
+    }
+  },
+
+  // MARK AS SEEN
   markAsSeen: async (bookingId, userId) => {
     try {
       const query = `
@@ -29,7 +51,7 @@ const Chat = {
       `;
       await sequelize.query(query, {
         replacements: { bookingId, userId },
-        type: QueryTypes.UPDATE
+        type: QueryTypes.UPDATE,
       });
       return { success: true };
     } catch (err) {
@@ -38,7 +60,7 @@ const Chat = {
     }
   },
 
-  // EDIT MESSAGE 
+  // EDIT MESSAGE
   editMessage: async (messageId, senderId, newText) => {
     try {
       const query = `
@@ -49,9 +71,9 @@ const Chat = {
       `;
       const result = await sequelize.query(query, {
         replacements: { messageId, senderId, newText },
-        type: QueryTypes.SELECT 
+        type: QueryTypes.SELECT,
       });
-      return result[0]; 
+      return result[0];
     } catch (err) {
       console.error("Error editing message:", err);
       throw err;
@@ -69,7 +91,7 @@ const Chat = {
       `;
       const result = await sequelize.query(query, {
         replacements: { messageId, senderId },
-        type: QueryTypes.SELECT
+        type: QueryTypes.SELECT,
       });
       return result[0];
     } catch (err) {
@@ -78,6 +100,24 @@ const Chat = {
     }
   },
 
+  // DELETE ALL MESSAGES IN A CHAT
+  deleteAllMessages: async (bookingId, userId) => {
+    try {
+      const query = `
+        UPDATE messages 
+        SET message = 'This message was deleted', deleted_at = NOW()
+        WHERE booking_id = :bookingId AND sender_id = :userId;
+      `;
+      await sequelize.query(query, {
+        replacements: { bookingId, userId },
+        type: QueryTypes.UPDATE,
+      });
+      return { success: true };
+    } catch (err) {
+      console.error("Error deleting all messages:", err);
+      throw err;
+    }
+  },
   // CREATE NEW MESSAGE
   create: async (bookingId, senderId, message) => {
     try {
@@ -87,21 +127,21 @@ const Chat = {
         RETURNING *;
       `;
       const result = await sequelize.query(query, {
-        replacements: { 
-          bookingId: parseInt(bookingId), 
-          senderId: parseInt(senderId), 
-          message 
+        replacements: {
+          bookingId: parseInt(bookingId),
+          senderId: parseInt(senderId),
+          message,
         },
-        type: QueryTypes.INSERT
+        type: QueryTypes.INSERT,
       });
-      return result[0][0]; 
+      return result[0][0];
     } catch (err) {
       console.error("Database Error (create):", err);
       throw err;
     }
   },
 
-  // GET INBOX (Sidebar list)
+  // GET INBOX
   getInbox: async (userId) => {
     try {
       const query = `
@@ -122,13 +162,13 @@ const Chat = {
       `;
       return await sequelize.query(query, {
         replacements: { userId: parseInt(userId) },
-        type: QueryTypes.SELECT
+        type: QueryTypes.SELECT,
       });
     } catch (err) {
       console.error("Database Error (getInbox):", err);
       throw err;
     }
-  }
+  },
 };
 
 module.exports = Chat;

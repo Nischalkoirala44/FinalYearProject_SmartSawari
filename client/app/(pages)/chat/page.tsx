@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import SmartChat from "@/components/ChatWindow";
-import { Search, MessageSquare, Loader2 } from "lucide-react";
+import { Search, MessageSquare, Loader2, Trash2 } from "lucide-react";
 import Image from "next/image";
 import LayoutWrapper from "@/components/LayoutWrapper";
 
@@ -12,6 +12,30 @@ export default function MessengerPage() {
   const [activeChat, setActiveChat] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const handleClearChat = async () => {
+    if (!activeChat || !token) return;
+
+    try {
+      const res = await fetch(`http://localhost:3001/api/chat/clear/${activeChat.bookingId}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        setIsDeleteModalOpen(false);
+        setConversations(prev => prev.map(c =>
+          c.bookingId === activeChat.bookingId
+            ? { ...c, lastMessage: "This message was deleted" }
+            : c
+        ));
+        setActiveChat({ ...activeChat, refresh: Date.now() });
+      }
+    } catch (err) {
+      console.error("Clear chat error:", err);
+    }
+  };
 
   const fetchInbox = async () => {
     if (!token) return;
@@ -92,10 +116,26 @@ export default function MessengerPage() {
           </div>
         </aside>
 
-        <main className="flex-1 flex flex-col bg-[#0a1620] min-w-0">
+        <main className="flex-1 flex flex-col bg-[#0a1620] min-w-0 relative">
+          {activeChat && (
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="absolute top-4 right-4 z-50 p-3 bg-gray-900/80 hover:bg-red-600/20 text-gray-500 hover:text-red-500 rounded-xl border border-gray-800 transition-all backdrop-blur-md"
+            >
+              <Trash2 size={18} />
+            </button>
+          )}
+
           {activeChat ? (
             <div className="flex-1 flex flex-col min-h-0 animate-in fade-in duration-500">
-              <SmartChat bookingId={activeChat.bookingId} user={user} token={token} ownerName={activeChat.ownerName} ownerImage={activeChat.ownerImage} />
+              <SmartChat
+                key={activeChat.bookingId + (activeChat.refresh || '')}
+                bookingId={activeChat.bookingId}
+                user={user}
+                token={token}
+                ownerName={activeChat.ownerName}
+                ownerImage={activeChat.ownerImage}
+              />
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center opacity-10 select-none">
@@ -105,6 +145,37 @@ export default function MessengerPage() {
           )}
         </main>
       </div>
+
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleClearChat}
+      />
     </LayoutWrapper>
+  );
+}
+
+function DeleteModal({ isOpen, onClose, onConfirm }: any) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+      <div className="bg-[#0e1f2e] border border-gray-800 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="w-12 h-12 bg-red-600/10 rounded-full flex items-center justify-center mb-6">
+          <Trash2 className="text-red-600" size={24} />
+        </div>
+        <h3 className="text-xl font-black uppercase tracking-tighter text-white mb-2">Delete All?</h3>
+        <p className="text-gray-400 text-[11px] font-bold leading-relaxed mb-8 uppercase tracking-wider">
+          Warning: This will delete your message history. This action is irreversible.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-4 rounded-xl bg-gray-800 text-[10px] font-black uppercase tracking-[0.2em] text-white hover:bg-gray-700 transition-all">
+            Cancel
+          </button>
+          <button onClick={onConfirm} className="flex-1 py-4 rounded-xl bg-red-600 text-[10px] font-black uppercase tracking-[0.2em] text-white hover:bg-red-700 transition-all shadow-lg shadow-red-900/40">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

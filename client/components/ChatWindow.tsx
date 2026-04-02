@@ -9,7 +9,7 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
-  
+
   // UI States for Edit/Delete
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
@@ -141,8 +141,8 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
       </div>
 
       {/* Messages */}
-      <div 
-        ref={scrollRef} 
+      <div
+        ref={scrollRef}
         className="flex-1 overflow-y-auto p-5 space-y-6 bg-[#0a1620]/30 custom-scrollbar"
         onClick={() => setShowMenu(null)} // Close menu on background click
       >
@@ -159,46 +159,45 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
 
             return (
               <div key={m.id || i} className={`flex ${isMe ? "justify-end" : "justify-start"} group relative animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                
+
                 {/* Context Menu Trigger - Now on the Right */}
-{isMe && !isDeleted && !isBeingEdited && (
-  <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-    <button 
-      onClick={(e) => { 
-        e.stopPropagation(); 
-        setShowMenu(showMenu === m.id ? null : m.id); 
-      }}
-      className="p-1.5 bg-gray-900 border border-gray-700 rounded-full text-gray-400 hover:text-white shadow-xl transition-colors"
-    >
-      <MoreVertical size={14} />
-    </button>
-    
-    {/* Dropdown Menu - Adjusted to drop down from the right */}
-    {showMenu === m.id && (
-      <div className="absolute top-full right-0 mt-1 w-28 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-        <button 
-          onClick={() => { setEditingId(m.id); setEditText(m.message); setShowMenu(null); }}
-          className="w-full flex items-center gap-2 px-3 py-2 text-[10px] uppercase font-black text-blue-400 hover:bg-white/10 transition-colors"
-        >
-          <Pencil size={12} /> Edit
-        </button>
-        <button 
-          onClick={() => handleUpdateMessage(m.id, 'delete')}
-          className="w-full flex items-center gap-2 px-3 py-2 text-[10px] uppercase font-black text-red-500 hover:bg-white/10 border-t border-gray-800 transition-colors"
-        >
-          <Trash2 size={12} /> Delete
-        </button>
-      </div>
-    )}
-  </div>
-)}
+                {isMe && !isDeleted && !isBeingEdited && (
+                  <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(showMenu === m.id ? null : m.id);
+                      }}
+                      className="p-1.5 bg-gray-900 border border-gray-700 rounded-full text-gray-400 hover:text-white shadow-xl transition-colors"
+                    >
+                      <MoreVertical size={14} />
+                    </button>
+
+                    {/* Dropdown Menu - Adjusted to drop down from the right */}
+                    {showMenu === m.id && (
+                      <div className="absolute top-full right-0 mt-1 w-28 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                        <button
+                          onClick={() => { setEditingId(m.id); setEditText(m.message); setShowMenu(null); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-[10px] uppercase font-black text-blue-400 hover:bg-white/10 transition-colors"
+                        >
+                          <Pencil size={12} /> Edit
+                        </button>
+                        <button
+                          onClick={() => handleUpdateMessage(m.id, 'delete')}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-[10px] uppercase font-black text-red-500 hover:bg-white/10 border-t border-gray-800 transition-colors"
+                        >
+                          <Trash2 size={12} /> Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Message Bubble */}
-                <div className={`max-w-[85%] p-4 rounded-2xl text-xs font-bold leading-relaxed relative ${
-                  isMe ? "bg-red-600 text-white rounded-tr-none shadow-lg shadow-red-900/20"
-                       : "bg-gray-800 text-gray-200 rounded-tl-none border border-gray-700"
-                } ${isDeleted ? "opacity-40 italic font-medium" : ""}`}>
-                  
+                <div className={`max-w-[85%] p-4 rounded-2xl text-xs font-bold leading-relaxed relative ${isMe ? "bg-red-600 text-white rounded-tr-none shadow-lg shadow-red-900/20"
+                    : "bg-gray-800 text-gray-200 rounded-tl-none border border-gray-700"
+                  } ${isDeleted ? "opacity-40 italic font-medium" : ""}`}>
+
                   {isBeingEdited ? (
                     <div className="space-y-2 min-w-[200px]">
                       <textarea
@@ -255,9 +254,9 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
           placeholder="Transmit message..."
           className="flex-1 bg-[#0a1620] border border-gray-800 rounded-xl px-4 py-3 text-xs font-bold text-white focus:border-red-600 outline-none transition-all placeholder:text-gray-700"
         />
-        <button 
-          onClick={handleSend} 
-          disabled={!input.trim()} 
+        <button
+          onClick={handleSend}
+          disabled={!input.trim()}
           className="bg-red-600 p-3 rounded-xl hover:bg-red-700 text-white transition-all disabled:opacity-50 active:scale-95 shadow-lg shadow-red-900/40"
         >
           <Send size={16} />
