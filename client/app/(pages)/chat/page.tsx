@@ -15,27 +15,23 @@ export default function MessengerPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleClearChat = async () => {
-    if (!activeChat || !token) return;
+  if (!activeChat || !token) return;
 
-    try {
-      const res = await fetch(`http://localhost:3001/api/chat/clear/${activeChat.bookingId}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+  try {
+    const res = await fetch(`http://localhost:3001/api/chat/clear/${activeChat.bookingId}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    });
 
-      if (res.ok) {
-        setIsDeleteModalOpen(false);
-        setConversations(prev => prev.map(c =>
-          c.bookingId === activeChat.bookingId
-            ? { ...c, lastMessage: "This message was deleted" }
-            : c
-        ));
-        setActiveChat({ ...activeChat, refresh: Date.now() });
-      }
-    } catch (err) {
-      console.error("Clear chat error:", err);
+    if (res.ok) {
+      setIsDeleteModalOpen(false);
+      setConversations(prev => prev.filter(c => c.bookingId !== activeChat.bookingId));
+      setActiveChat(null); 
     }
-  };
+  } catch (err) {
+    console.error("Clear chat error:", err);
+  }
+};
 
   const fetchInbox = async () => {
     if (!token) return;
@@ -64,7 +60,6 @@ export default function MessengerPage() {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
-      // Update local UI immediately
       setConversations(prev => prev.map(c =>
         c.bookingId === chat.bookingId ? { ...c, isSeen: true } : c
       ));

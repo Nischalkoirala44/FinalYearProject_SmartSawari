@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { socket, fetchChatHistory } from "@/services/Chat";
-import { Send, Loader2, Check, CheckCheck, MoreVertical, Pencil, Trash2, X, Check as Save } from "lucide-react";
+import { Send, Loader2, Check, CheckCheck, MoreVertical, Pencil, Trash2, X, Check as Save, MessageSquare } from "lucide-react";
 import Image from "next/image";
 
 export default function SmartChat({ bookingId, user, token, ownerName, ownerImage }: any) {
@@ -144,12 +144,27 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto p-5 space-y-6 bg-[#0a1620]/30 custom-scrollbar"
-        onClick={() => setShowMenu(null)} // Close menu on background click
+        onClick={() => setShowMenu(null)}
       >
         {isLoading ? (
           <div className="h-full flex flex-col items-center justify-center gap-2 opacity-50">
             <Loader2 className="animate-spin text-red-600" size={20} />
             <span className="text-[9px] font-black uppercase tracking-widest">Decrypting Logs...</span>
+          </div>
+        ) : messages.length === 0 ? (
+          /* Empty State UI */
+          <div className="h-full flex flex-col items-center justify-center text-center p-10 animate-in fade-in duration-700">
+            <div className="relative mb-6">
+              <MessageSquare size={48} className="text-gray-800" strokeWidth={1.5} />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full animate-pulse border-2 border-[#0e1f2e]" />
+            </div>
+            <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-500 mb-2">
+              No Messages Yet
+            </h3>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-700 max-w-[200px] leading-relaxed">
+              Start the conversation by sending a message. Your messages are stored securely.
+            </p>
+            <div className="mt-8 w-12 h-[1px] bg-gradient-to-r from-transparent via-gray-800 to-transparent opacity-30" />
           </div>
         ) : (
           messages.map((m, i) => {
@@ -159,8 +174,7 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
 
             return (
               <div key={m.id || i} className={`flex ${isMe ? "justify-end" : "justify-start"} group relative animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-
-                {/* Context Menu Trigger - Now on the Right */}
+                
                 {isMe && !isDeleted && !isBeingEdited && (
                   <div className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     <button
@@ -168,23 +182,22 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
                         e.stopPropagation();
                         setShowMenu(showMenu === m.id ? null : m.id);
                       }}
-                      className="p-1.5 bg-gray-900 border border-gray-700 rounded-full text-gray-400 hover:text-white shadow-xl transition-colors"
+                      className="p-1.5 bg-gray-900 border border-gray-700 rounded-full text-gray-400 hover:text-white shadow-xl"
                     >
                       <MoreVertical size={14} />
                     </button>
 
-                    {/* Dropdown Menu - Adjusted to drop down from the right */}
                     {showMenu === m.id && (
-                      <div className="absolute top-full right-0 mt-1 w-28 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                      <div className="absolute top-full right-0 mt-1 w-28 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl z-50 overflow-hidden">
                         <button
                           onClick={() => { setEditingId(m.id); setEditText(m.message); setShowMenu(null); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-[10px] uppercase font-black text-blue-400 hover:bg-white/10 transition-colors"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-[10px] uppercase font-black text-blue-400 hover:bg-white/10"
                         >
                           <Pencil size={12} /> Edit
                         </button>
                         <button
                           onClick={() => handleUpdateMessage(m.id, 'delete')}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-[10px] uppercase font-black text-red-500 hover:bg-white/10 border-t border-gray-800 transition-colors"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-[10px] uppercase font-black text-red-500 hover:bg-white/10 border-t border-gray-800"
                         >
                           <Trash2 size={12} /> Delete
                         </button>
@@ -193,7 +206,6 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
                   </div>
                 )}
 
-                {/* Message Bubble */}
                 <div className={`max-w-[85%] p-4 rounded-2xl text-xs font-bold leading-relaxed relative ${isMe ? "bg-red-600 text-white rounded-tr-none shadow-lg shadow-red-900/20"
                     : "bg-gray-800 text-gray-200 rounded-tl-none border border-gray-700"
                   } ${isDeleted ? "opacity-40 italic font-medium" : ""}`}>
@@ -203,7 +215,7 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
                       <textarea
                         value={editText}
                         onChange={(e) => setEditText(e.target.value)}
-                        className="w-full bg-black/30 border border-white/20 rounded-lg p-2 text-white outline-none focus:border-white/40 resize-none"
+                        className="w-full bg-black/30 border border-white/20 rounded-lg p-2 text-white outline-none resize-none"
                         rows={2}
                         autoFocus
                       />
@@ -220,7 +232,6 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
                     <p className="whitespace-pre-wrap">{m.message || m.text}</p>
                   )}
 
-                  {/* Metadata */}
                   <div className="flex items-center justify-end gap-1.5 mt-2 select-none">
                     {m.is_edited && !isDeleted && (
                       <span className="text-[7px] uppercase tracking-tighter opacity-60">Edited</span>
@@ -251,7 +262,7 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          placeholder="Transmit message..."
+          placeholder="Send message..."
           className="flex-1 bg-[#0a1620] border border-gray-800 rounded-xl px-4 py-3 text-xs font-bold text-white focus:border-red-600 outline-none transition-all placeholder:text-gray-700"
         />
         <button

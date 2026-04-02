@@ -100,24 +100,23 @@ const Chat = {
     }
   },
 
-  // DELETE ALL MESSAGES IN A CHAT
-  deleteAllMessages: async (bookingId, userId) => {
-    try {
-      const query = `
-        UPDATE messages 
-        SET message = 'This message was deleted', deleted_at = NOW()
-        WHERE booking_id = :bookingId AND sender_id = :userId;
-      `;
-      await sequelize.query(query, {
-        replacements: { bookingId, userId },
-        type: QueryTypes.UPDATE,
-      });
-      return { success: true };
-    } catch (err) {
-      console.error("Error deleting all messages:", err);
-      throw err;
-    }
-  },
+  // Delete all messages in a booking (Clear Chat)
+  deleteAllMessages: async (bookingId) => {
+  try {
+    const query = `
+      DELETE FROM messages 
+      WHERE booking_id = :bookingId;
+    `;
+    await sequelize.query(query, {
+      replacements: { bookingId: parseInt(bookingId) },
+      type: QueryTypes.DELETE
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("Delete Error:", err);
+    throw err;
+  }
+},
   // CREATE NEW MESSAGE
   create: async (bookingId, senderId, message) => {
     try {
