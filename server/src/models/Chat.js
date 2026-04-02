@@ -2,30 +2,83 @@ const sequelize = require("../config/db");
 const { QueryTypes } = require("sequelize");
 
 const Chat = {
-  // ── 1. GET CHAT HISTORY ──
-  // Used when a specific chat is opened
+  // GET CHAT HISTORY 
   findByBookingId: async (bookingId) => {
+    const query = `
+      SELECT m.*, u.name as sender_name, u.profile_image 
+      FROM messages m
+      JOIN users u ON m.sender_id = u.id
+      WHERE m.booking_id = :bookingId
+      ORDER BY m.created_at ASC;
+    `;
+    return await sequelize.query(query, {
+      replacements: { bookingId: parseInt(bookingId) },
+      type: QueryTypes.SELECT
+    });
+  },
+
+  // MARK AS SEEN (WhatsApp "Blue Ticks" logic)
+  markAsSeen: async (bookingId, userId) => {
     try {
       const query = `
-        SELECT m.*, u.name as sender_name, u.profile_image 
-        FROM messages m
-        JOIN users u ON m.sender_id = u.id
-        WHERE m.booking_id = :bookingId
-        ORDER BY m.created_at ASC;
+        UPDATE messages 
+        SET is_seen = true 
+        WHERE booking_id = :bookingId 
+        AND sender_id != :userId 
+        AND is_seen = false;
       `;
-
-      return await sequelize.query(query, {
-        replacements: { bookingId: parseInt(bookingId) },
-        type: QueryTypes.SELECT
+      await sequelize.query(query, {
+        replacements: { bookingId, userId },
+        type: QueryTypes.UPDATE
       });
+      return { success: true };
     } catch (err) {
-      console.error("Database Error (findByBookingId):", err);
+      console.error("Error marking seen:", err);
       throw err;
     }
   },
 
-  // ── 2. CREATE MESSAGE ──
-  // Used when a user sends a new message
+  // EDIT MESSAGE 
+  editMessage: async (messageId, senderId, newText) => {
+    try {
+      const query = `
+        UPDATE messages 
+        SET message = :newText, is_edited = true, updated_at = NOW()
+        WHERE id = :messageId AND sender_id = :senderId
+        RETURNING *;
+      `;
+      const result = await sequelize.query(query, {
+        replacements: { messageId, senderId, newText },
+        type: QueryTypes.SELECT 
+      });
+      return result[0]; 
+    } catch (err) {
+      console.error("Error editing message:", err);
+      throw err;
+    }
+  },
+
+  // DELETE MESSAGE
+  deleteMessage: async (messageId, senderId) => {
+    try {
+      const query = `
+        UPDATE messages 
+        SET message = 'This message was deleted', deleted_at = NOW()
+        WHERE id = :messageId AND sender_id = :senderId
+        RETURNING *;
+      `;
+      const result = await sequelize.query(query, {
+        replacements: { messageId, senderId },
+        type: QueryTypes.SELECT
+      });
+      return result[0];
+    } catch (err) {
+      console.error("Error deleting message:", err);
+      throw err;
+    }
+  },
+
+  // CREATE NEW MESSAGE
   create: async (bookingId, senderId, message) => {
     try {
       const query = `
@@ -33,7 +86,6 @@ const Chat = {
         VALUES (:bookingId, :senderId, :message, NOW(), NOW()) 
         RETURNING *;
       `;
-      
       const result = await sequelize.query(query, {
         replacements: { 
           bookingId: parseInt(bookingId), 
@@ -42,8 +94,6 @@ const Chat = {
         },
         type: QueryTypes.INSERT
       });
-      
-      // result[0] is the inserted row in PostgreSQL
       return result[0][0]; 
     } catch (err) {
       console.error("Database Error (create):", err);
@@ -51,53 +101,25 @@ const Chat = {
     }
   },
 
-  getOwnerByBookingId: async (bookingId, currentUserId) => {
-  try {
-    const query = `
-      SELECT u."name" as "ownerName", u."profile_image" as "ownerImage"
-      FROM "Bookings" b
-      JOIN "Vehicles" v ON b."vehicleId" = v."id"
-      JOIN "users" u ON (b."renterId" = u."id" OR v."userId" = u."id")
-      WHERE b."id" = :bookingId
-        AND u."id" != :currentUserId
-      LIMIT 1;
-    `;
-    const result = await sequelize.query(query, {
-      replacements: { 
-        bookingId: parseInt(bookingId), 
-        currentUserId: parseInt(currentUserId) 
-      },
-      type: QueryTypes.SELECT
-    });
-    return result[0] || null;
-  } catch (err) {
-    console.error("Database Error (getOwnerByBookingId):", err);
-    throw err;
-  }
-},
-
-  // ── 3. GET MESSENGER INBOX (New) ──
-  // Used for the sidebar list (Owner name, image, last message)
+  // GET INBOX (Sidebar list)
   getInbox: async (userId) => {
     try {
-      // models/Chat.js -> getInbox method
-
-const query = `
-  SELECT DISTINCT ON (m."booking_id") 
-    m."booking_id" as "bookingId", 
-    m."message" as "lastMessage", 
-    m."created_at" as "lastTime",
-    u."name" as "ownerName", 
-    u."profile_image" as "ownerImage"
-  FROM messages m
-  JOIN "Bookings" b ON m."booking_id" = b."id"
-  JOIN "Vehicles" v ON b."vehicleId" = v."id"
-  JOIN "users" u ON (b."renterId" = u."id" OR v."userId" = u."id")
-  WHERE (b."renterId" = :userId OR v."userId" = :userId) 
-    AND u."id" != :userId
-  ORDER BY m."booking_id", m."created_at" DESC;
-`;
-
+      const query = `
+        SELECT DISTINCT ON (m."booking_id") 
+          m."booking_id" as "bookingId", 
+          m."message" as "lastMessage", 
+          m."created_at" as "lastTime",
+          m."is_seen" as "isSeen",
+          u."name" as "ownerName", 
+          u."profile_image" as "ownerImage"
+        FROM messages m
+        JOIN "Bookings" b ON m."booking_id" = b."id"
+        JOIN "Vehicles" v ON b."vehicleId" = v."id"
+        JOIN "users" u ON (b."renterId" = u."id" OR v."userId" = u."id")
+        WHERE (b."renterId" = :userId OR v."userId" = :userId) 
+          AND u."id" != :userId
+        ORDER BY m."booking_id", m."created_at" DESC;
+      `;
       return await sequelize.query(query, {
         replacements: { userId: parseInt(userId) },
         type: QueryTypes.SELECT
