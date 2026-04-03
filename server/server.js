@@ -26,6 +26,7 @@ const bookingRoutes = require("./src/routes/bookingRoutes");
 const withdrawalRoute = require("./src/routes/withdrawalRoute");
 const locationRoute = require("./src/routes/locationRoute");
 const notificationRoute = require("./src/routes/notificationRoute");
+const adminRoute = require("./src/routes/adminRoute");
 
 
 const PORT = process.env.PORT || 3001;
@@ -73,6 +74,7 @@ app.use("/api/withdrawals", withdrawalRoute);
 app.use("/api/locations", locationRoute);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/chat", chatRoutes);
+app.use("/api/admin", adminRoute);
 
 io.on("connection", (socket) => {
   socket.on("join_chat", ({ chatId }) => {

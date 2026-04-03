@@ -49,8 +49,8 @@ export default function AdminWithdrawals() {
             {requests.map((req: any) => (
               <tr key={req.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                 <td className="p-6">
-                  <p className="font-bold text-slate-900">{req.User?.name}</p>
-                  <p className="text-[10px] text-slate-400">{req.User?.email}</p>
+                  <p className="font-bold text-slate-900">{req.user?.name}</p>
+                  <p className="text-[10px] text-slate-400">{req.user?.email}</p>
                 </td>
                 <td className="p-6 font-black text-emerald-600">Rs. {req.amount}</td>
                 <td className="p-6">

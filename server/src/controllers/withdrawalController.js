@@ -32,7 +32,7 @@ exports.getAllWithdrawals = async (req, res) => {
   try {
     const requests = await Withdrawal.findAll({
       where: { status: "pending" },
-      include: [{ model: User, attributes: ["name", "email"] }],
+      include: [{ model: User, as: "user", attributes: ["name", "email"] }],
       order: [["createdAt", "DESC"]],
     });
     res.status(200).json({ success: true, requests });
