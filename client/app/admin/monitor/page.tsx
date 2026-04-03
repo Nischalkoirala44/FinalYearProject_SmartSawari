@@ -1,12 +1,12 @@
-// app/admin/dashboard/page.tsx
 "use client";
 import { useEffect, useState } from "react";
 import { AdminStats } from "../(components)/AdminStats";
 import { AdminMonitorTable } from "../(components)/AdminMonitorTable";
+import { AdminCharts } from "../(components)/AdminCharts";
 import { Loader2, AlertCircle } from "lucide-react";
 
 export default function AdminDashboard() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<any>(null); // Your state is called 'data'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +38,6 @@ export default function AdminDashboard() {
     fetchAdminData();
   }, []);
 
-  // Light Theme Loader
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-white">
       <Loader2 className="animate-spin text-red-600 mb-4" size={40} />
@@ -48,7 +47,6 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // Light Theme Error State
   if (error) return (
     <div className="h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-w-md">
@@ -92,6 +90,13 @@ export default function AdminDashboard() {
           totalVehicles: data?.summary?.totalVehicles || 0,
           totalUsers: data?.summary?.totalUsers || 0
         }} />
+
+        {/* Revenue Chart */}
+        <div className="mt-10">
+          {data && data.analytics && (
+            <AdminCharts data={data.analytics} />
+          )}
+        </div>
 
         {/* Transmission Logs Table */}
         <div className="mt-10">
