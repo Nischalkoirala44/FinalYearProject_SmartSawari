@@ -106,6 +106,32 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+const getAllUsers = async (req, res) => {
+  try {
+    const { role } = req.query;
+    
+    const whereClause = {};
+    if (role && ["owner", "renter"].includes(role)) {
+      whereClause.role = role;
+    }
+
+    const users = await User.findAll({
+      where: whereClause,
+      attributes: { exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires'] },
+      order: [['created_at', 'DESC']],
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: users.length,
+      users
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getDashboardStats,
+  getAllUsers,
 };

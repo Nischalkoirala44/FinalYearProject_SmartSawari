@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { AdminStats } from "../(components)/AdminStats";
 import { AdminMonitorTable } from "../(components)/AdminMonitorTable";
+import { AdminUserTable } from "../(components)/AdminUserTable";
 import { AdminCharts } from "../(components)/AdminCharts";
 import { Loader2, AlertCircle } from "lucide-react";
 
@@ -9,6 +10,21 @@ export default function AdminDashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [users, setUsers] = useState([]);
+
+useEffect(() => {
+  const fetchUsers = async () => {
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:3001/api/admin/users", {
+       headers: { Authorization: `Bearer ${token}` }
+    });
+    const result = await res.json();
+    if(result.success) setUsers(result.users);
+  };
+  fetchUsers();
+}, []);
+
 
   useEffect(() => {
     const fetchAdminData = async () => {
@@ -97,6 +113,12 @@ export default function AdminDashboard() {
             <AdminCharts data={data.analytics} />
           )}
         </div>
+
+
+          <div className="mt-10">
+<AdminUserTable users={users} />
+          </div>
+        
 
         {/* Transmission Logs Table */}
         <div className="mt-10">
