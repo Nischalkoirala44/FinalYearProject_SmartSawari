@@ -6,7 +6,7 @@ import { AdminCharts } from "../(components)/AdminCharts";
 import { Loader2, AlertCircle } from "lucide-react";
 
 export default function AdminDashboard() {
-  const [data, setData] = useState<any>(null); // Your state is called 'data'
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-4 mb-2">
             <div className="h-8 w-1.5 bg-red-600 rounded-full" />
             <h1 className="text-2xl font-black uppercase tracking-[0.3em] text-slate-900">
-              Admin Command Center
+              Admin Dashboard
             </h1>
           </div>
           <p className="text-slate-500 text-xs font-bold uppercase tracking-widest ml-[1.4rem]">

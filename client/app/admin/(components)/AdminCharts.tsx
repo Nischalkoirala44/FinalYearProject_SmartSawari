@@ -7,14 +7,13 @@ export const AdminCharts = ({ data }: { data: any[] }) => {
 
   useEffect(() => {
     setIsMounted(true);
-    // DEBUG: Check your console (F12) to see if data is actually reaching the chart
     console.log("Chart received data:", data);
   }, [data]);
 
-  // 1. Initial Mount Check (Prevents Hydration Error)
+  // Initial Mount Check
   if (!isMounted) return <div className="h-[300px] w-full bg-slate-50 animate-pulse rounded-2xl" />;
 
-  // 2. Loading State (If data is still undefined/null)
+  // Loading State
   if (!data) {
     return (
       <div className="bg-white border border-slate-200 p-6 rounded-2xl h-[300px] flex items-center justify-center">
@@ -23,7 +22,7 @@ export const AdminCharts = ({ data }: { data: any[] }) => {
     );
   }
 
-  // 3. Empty Data Check
+  // Empty Data Check
   if (data.length === 0) {
     return (
       <div className="bg-white border border-slate-200 p-6 rounded-2xl h-[300px] flex flex-col items-center justify-center">
@@ -59,7 +58,7 @@ export const AdminCharts = ({ data }: { data: any[] }) => {
               tickLine={false} 
               tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 'bold'}}
               dy={10}
-              interval={4} // ONLY SHOW EVERY 5th DAY to prevent 30 labels from overlapping
+              interval={4}
             />
             <YAxis 
               axisLine={false} 
