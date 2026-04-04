@@ -15,9 +15,9 @@ import {
   Clock,
   CheckCircle2,
   Radio,
+  Lock,
 } from "lucide-react";
 
-import { useRouter } from "next/navigation";
 import RenterBeacon from "../(components)/RenterBeacon";
 
 const BookingMap = dynamic(() => import("../(components)/BookingMap"), {
@@ -150,65 +150,73 @@ const MyBookings: React.FC = () => {
               <div className="col-span-2 text-right">Status</div>
             </div>
 
-            {displayBookings.map((booking) => (
-              <div
-                key={booking.id}
-                onClick={() => setSelectedBooking(booking)}
-                className={`grid grid-cols-1 md:grid-cols-12 items-center gap-4 bg-[#0d1f2f] hover:bg-[#122a3f] border border-white/5 p-5 md:px-8 rounded-[1.5rem] transition-all cursor-pointer group hover:border-red-600/30 ${filterType === 'Past' ? 'opacity-70 grayscale-[0.5]' : ''}`}
-              >
-                <div className="col-span-5 flex items-center gap-5">
-                  <div className="relative w-20 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 bg-black">
-                    <Image src={booking.vehicle.documentImage.vehicleImages[0] || "/placeholder.png"} alt="vehicle" fill className="object-cover opacity-80" />
-                  </div>
-                  <div>
-                    <h3 className="font-black uppercase italic text-sm tracking-tight">{booking.vehicle.vehicleType}</h3>
-                    <p className="text-[9px] font-mono text-gray-500 uppercase tracking-tighter">{booking.bookingId}</p>
-                  </div>
-                </div>
+            {displayBookings.map((booking) => {
+              const now = new Date();
+              const start = new Date(booking.startDate);
+              const end = new Date(booking.endDate);
+              end.setHours(23, 59, 59, 999);
+              const isLive = now >= start && now <= end;
 
-                <div className="col-span-3">
-                  <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 font-mono">
-                    <span>{booking.startDate.split('T')[0]}</span>
-                    <div className="h-px w-3 bg-gray-700"></div>
-                    <span>{booking.endDate.split('T')[0]}</span>
-                  </div>
-                </div>
-
-                {/* THE SINGLE MASTER TOGGLE */}
-                <div className="col-span-2 flex flex-col items-center gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleLocalSharing(booking.id);
-                    }}
-                    className={`relative w-11 h-5 rounded-full transition-all duration-300 flex items-center px-1 ${booking.isSharing ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-gray-800'}`}
-                  >
-                    <div className={`w-3 h-3 rounded-full bg-white transition-transform duration-300 ${booking.isSharing ? 'translate-x-6' : 'translate-x-0'}`} />
-                  </button>
-                  
-                  {/* Headless Beacon mounts here when sharing is active */}
-                  {booking.isSharing && (
-                    <div onClick={(e) => e.stopPropagation()} className="mt-1">
-                       <RenterBeacon 
-                         bookingId={booking.id} 
-                         token={localStorage.getItem("token") || ""} 
-                       />
+              return (
+                <div
+                  key={booking.id}
+                  onClick={() => setSelectedBooking(booking)}
+                  className={`grid grid-cols-1 md:grid-cols-12 items-center gap-4 bg-[#0d1f2f] hover:bg-[#122a3f] border border-white/5 p-5 md:px-8 rounded-[1.5rem] transition-all cursor-pointer group hover:border-red-600/30 ${filterType === 'Past' ? 'opacity-70 grayscale-[0.5]' : ''}`}
+                >
+                  <div className="col-span-5 flex items-center gap-5">
+                    <div className="relative w-20 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 bg-black">
+                      <Image src={booking.vehicle.documentImage.vehicleImages[0] || "/placeholder.png"} alt="vehicle" fill className="object-cover opacity-80" />
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <h3 className="font-black uppercase italic text-sm tracking-tight">{booking.vehicle.vehicleType}</h3>
+                      <p className="text-[9px] font-mono text-gray-500 uppercase tracking-tighter">{booking.bookingId}</p>
+                    </div>
+                  </div>
 
-                <div className="col-span-2 flex items-center justify-between md:justify-end gap-4">
-                   <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border ${
+                  <div className="col-span-3">
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 font-mono">
+                      <span>{booking.startDate.split('T')[0]}</span>
+                      <div className="h-px w-3 bg-gray-700"></div>
+                      <span>{booking.endDate.split('T')[0]}</span>
+                    </div>
+                  </div>
+
+                  <div className="col-span-2 flex flex-col items-center gap-2">
+                    {isLive ? (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleLocalSharing(booking.id);
+                          }}
+                          className={`relative w-11 h-5 rounded-full transition-all duration-300 flex items-center px-1 ${booking.isSharing ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-gray-800'}`}
+                        >
+                          <div className={`w-3 h-3 rounded-full bg-white transition-transform duration-300 ${booking.isSharing ? 'translate-x-6' : 'translate-x-0'}`} />
+                        </button>
+                        {booking.isSharing && (
+                          <div onClick={(e) => e.stopPropagation()} className="mt-1">
+                            <RenterBeacon bookingId={booking.id} token={localStorage.getItem("token") || ""} />
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest border border-white/5 px-2 py-1 rounded">Signal Offline</span>
+                    )}
+                  </div>
+
+                  <div className="col-span-2 flex items-center justify-between md:justify-end gap-4">
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border ${
                       booking.bookingStatus === 'pending' 
                       ? 'border-amber-500/20 text-amber-400 bg-amber-500/5' 
                       : 'border-white/10 text-gray-500'
                     }`}>
                       {booking.bookingStatus}
                     </span>
-                  <ChevronIcon />
+                    <ChevronIcon />
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -225,62 +233,84 @@ const MyBookings: React.FC = () => {
                     <button onClick={() => setSelectedBooking(null)} className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-colors"><X size={20} /></button>
                   </div>
 
-                  <div className="mb-8 p-6 rounded-[2rem] border border-white/5 bg-gradient-to-br from-black/40 to-transparent flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl ${selectedBooking.isSharing ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500 animate-pulse'}`}>
-                        <Radio size={24} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-black uppercase italic">Owner Surveillance</p>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-tighter">
-                          {selectedBooking.isSharing ? 'Tracking active' : 'Satellite uplink disconnected'}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {/* MODAL MASTER TOGGLE */}
-                    <button
-                      onClick={() => toggleLocalSharing(selectedBooking.id)}
-                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
-                        selectedBooking.isSharing 
-                        ? 'bg-emerald-600 border-emerald-400 text-white' 
-                        : 'bg-white/5 border-white/10 text-gray-400'
-                      }`}
-                    >
-                      {selectedBooking.isSharing ? 'STOP SHARING' : 'START SHARING'}
-                    </button>
-                  </div>
+                  {(() => {
+                    const now = new Date();
+                    const start = new Date(selectedBooking.startDate);
+                    const end = new Date(selectedBooking.endDate);
+                    end.setHours(23, 59, 59, 999);
+                    const isLive = now >= start && now <= end;
 
-                  <div className="space-y-8">
-                    <div className="grid grid-cols-2 gap-10 border-b border-white/5 pb-8">
-                      <div>
-                        <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-2">Deployed Unit</p>
-                        <p className="text-2xl font-black uppercase italic">{selectedBooking.vehicle.vehicleType}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-2">Total Budget</p>
-                        <p className="text-3xl font-black text-red-600 italic font-mono">Rs. {selectedBooking.totalAmount}</p>
-                      </div>
-                    </div>
+                    return (
+                      <>
+                        {isLive ? (
+                          <div className="mb-8 p-6 rounded-[2rem] border border-white/5 bg-gradient-to-br from-black/40 to-transparent flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className={`p-3 rounded-xl ${selectedBooking.isSharing ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500 animate-pulse'}`}>
+                                <Radio size={24} />
+                              </div>
+                              <div>
+                                <p className="text-xs font-black uppercase italic">Owner Surveillance</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-tighter">
+                                  {selectedBooking.isSharing ? 'Tracking active' : 'Satellite uplink disconnected'}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => toggleLocalSharing(selectedBooking.id)}
+                              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                selectedBooking.isSharing 
+                                ? 'bg-emerald-600 border-emerald-400 text-white' 
+                                : 'bg-white/5 border-white/10 text-gray-400'
+                              }`}
+                            >
+                              {selectedBooking.isSharing ? 'STOP SHARING' : 'START SHARING'}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="mb-8 p-6 rounded-[2rem] border border-white/5 bg-black/20 text-center">
+                            <p className="text-[10px] text-gray-600 font-black uppercase tracking-[0.2em]">Broadcast session unavailable for past/future logs</p>
+                          </div>
+                        )}
 
-                    <div className="flex items-start gap-4 bg-[#0f2435] p-6 rounded-[2rem] border border-white/5">
-                      <div className="p-3 bg-red-600/10 rounded-xl"><MapPin size={20} className="text-red-600" /></div>
-                      <div>
-                        <p className="text-[10px] text-gray-500 uppercase font-black mb-1">Retrieval Point</p>
-                        <p className="font-bold text-white uppercase italic">{selectedBooking.vehicle.location?.locationName}</p>
-                        <p className="text-xs text-gray-400 mt-1">{selectedBooking.vehicle.location?.addressLine}</p>
-                      </div>
-                    </div>
+                        <div className="space-y-8">
+                          <div className="grid grid-cols-2 gap-10 border-b border-white/5 pb-8">
+                            <div>
+                              <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-2">Deployed Unit</p>
+                              <p className="text-2xl font-black uppercase italic">{selectedBooking.vehicle.vehicleType}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-2">Total Budget</p>
+                              <p className="text-3xl font-black text-red-600 italic font-mono">Rs. {selectedBooking.totalAmount}</p>
+                            </div>
+                          </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-                      <button onClick={() => setShowMap(true)} className="bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] shadow-lg shadow-red-900/20 flex items-center justify-center gap-3">
-                        <Navigation size={16} fill="currentColor" /> View Live Route
-                      </button>
-                      <button onClick={() => setSelectedBooking(null)} className="bg-white text-black py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest">
-                        Close
-                      </button>
-                    </div>
-                  </div>
+                          <div className="flex items-start gap-4 bg-[#0f2435] p-6 rounded-[2rem] border border-white/5">
+                            <div className="p-3 bg-red-600/10 rounded-xl"><MapPin size={20} className="text-red-600" /></div>
+                            <div>
+                              <p className="text-[10px] text-gray-500 uppercase font-black mb-1">Retrieval Point</p>
+                              <p className="font-bold text-white uppercase italic">{selectedBooking.vehicle.location?.locationName}</p>
+                              <p className="text-xs text-gray-400 mt-1">{selectedBooking.vehicle.location?.addressLine}</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                            {isLive ? (
+                              <button onClick={() => setShowMap(true)} className="bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] shadow-lg shadow-red-900/20 flex items-center justify-center gap-3">
+                                <Navigation size={16} fill="currentColor" /> View Live Route
+                              </button>
+                            ) : (
+                              <button disabled className="bg-white/5 border border-white/5 text-gray-600 py-5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] flex items-center justify-center gap-3 cursor-not-allowed">
+                                <Lock size={16} /> Route Locked
+                              </button>
+                            )}
+                            <button onClick={() => setSelectedBooking(null)} className="bg-white text-black py-4 rounded-2xl font-black uppercase text-[11px] tracking-widest">
+                              Close
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </>
               ) : (
                 <div className="animate-in slide-in-from-right duration-400">

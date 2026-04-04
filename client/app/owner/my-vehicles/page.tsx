@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import Image from 'next/image';
-import OwnerTracking from '../(components)/OwnerTracking';
 
 export default function MyVehiclesPage() {
   const [vehicles, setVehicles] = useState([]);
@@ -96,11 +95,6 @@ export default function MyVehiclesPage() {
               <X size={20} className="group-hover:rotate-90 transition-transform" /> 
               Terminate Link
             </button>
-            
-            <OwnerTracking 
-              bookingId={trackingVehicle.activeBookingId} 
-              vehicleName={trackingVehicle.vehicleType} 
-            />
           </div>
         </div>
       )}
@@ -204,17 +198,6 @@ export default function MyVehiclesPage() {
                             {vehicle.availabilityStatus}
                           </span>
                         </div>
-
-                        {/* LIVE TRACK BUTTON - Only shows if rented */}
-                        {isUnavailable && (
-                          <button 
-                            onClick={() => setTrackingVehicle(vehicle)}
-                            className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-tighter hover:bg-red-700 transition-all animate-pulse"
-                          >
-                            <Radar size={10} className="animate-spin-slow" />
-                            Track Asset
-                          </button>
-                        )}
                       </div>
                     </div>
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 // @ts-ignore
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
 import RoutingMachine from "./RoutingMachine";
-import { Timer, Map as MapIcon, Shield, Navigation } from "lucide-react";
+import { Timer, Map as MapIcon, Shield, Navigation, AlertTriangle } from "lucide-react";
 
 const hubIcon = L.icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
@@ -31,12 +31,31 @@ export default function BookingMap({ destLat, destLng, hubName }: any) {
   const [stableUserPos, setStableUserPos] = useState<[number, number] | null>(null);
   const [summary, setSummary] = useState<{ distance: number; time: number } | null>(null);
   const [showSteps, setShowSteps] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!navigator.geolocation) {
+      setGeoError("Browser does not support Geolocation");
+      return;
+    }
+
     const watchId = navigator.geolocation.watchPosition(
-      (pos) => setUserPos([pos.coords.latitude, pos.coords.longitude]),
-      (err) => console.error("Location error", err),
-      { enableHighAccuracy: true }
+      (pos) => {
+        setUserPos([pos.coords.latitude, pos.coords.longitude]);
+        setGeoError(null);
+      },
+      (err) => {
+        let msg = "Location Access Denied";
+        if (err.code === err.POSITION_UNAVAILABLE) msg = "GPS Signal Unavailable";
+        if (err.code === err.TIMEOUT) msg = "Location Request Timed Out";
+        console.error("Location Error:", msg, err);
+        setGeoError(msg);
+      },
+      { 
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0 
+      }
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
@@ -65,6 +84,14 @@ export default function BookingMap({ destLat, destLng, hubName }: any) {
   return (
     <div className="relative h-[450px] w-full rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl bg-[#0b1a27]">
       
+      {/* Geolocation Error Overlay */}
+      {geoError && (
+        <div className="absolute bottom-20 left-6 z-[1000] flex items-center gap-3 bg-red-600/90 backdrop-blur-md px-4 py-2 rounded-xl border border-red-400/20 text-white shadow-2xl animate-in fade-in slide-in-from-left-4">
+          <AlertTriangle size={14} />
+          <span className="text-[10px] font-black uppercase tracking-widest">{geoError}</span>
+        </div>
+      )}
+
       {/* Floating Summary UI */}
       {summary && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] flex gap-4 bg-[#0d1f2f]/90 backdrop-blur-xl px-6 py-4 rounded-3xl border border-white/10 shadow-2xl">
@@ -88,9 +115,14 @@ export default function BookingMap({ destLat, destLng, hubName }: any) {
       {/* VIEW STEPS TOGGLE BUTTON */}
       <button 
         onClick={toggleSteps}
-        className="absolute bottom-6 right-6 z-[1000] bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center gap-2"
+        disabled={!stableUserPos}
+        className={`absolute bottom-6 right-6 z-[1000] px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center gap-2 ${
+          stableUserPos 
+          ? "bg-red-600 hover:bg-red-700 text-white" 
+          : "bg-gray-800 text-gray-500 cursor-not-allowed opacity-50"
+        }`}
       >
-        <Navigation size={14} fill="currentColor" />
+        <Navigation size={14} fill={stableUserPos ? "currentColor" : "none"} />
         {showSteps ? "Close Manifest" : "View Steps"}
       </button>
 

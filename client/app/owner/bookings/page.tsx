@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { 
   Calendar, MapPin, User, Phone, 
-  ChevronRight, Radar, Wallet, Clock, CheckCircle2 
+  ChevronRight, Radar, Clock 
 } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +33,7 @@ export default function OwnerBookingsPage() {
   }, []);
 
   const getStatusStyle = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'confirmed': return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
       case 'pending': return "bg-amber-500/10 text-amber-400 border-amber-500/20";
       case 'cancelled': return "bg-red-500/10 text-red-400 border-red-500/20";
@@ -75,87 +75,103 @@ export default function OwnerBookingsPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {bookings.map((booking: any) => (
-              <Card key={booking.id} className="bg-[#0d1f2f] border-white/5 hover:border-white/10 transition-all rounded-[2rem] overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="flex flex-col lg:flex-row">
-                    {/* Vehicle Preview */}
-                    <div className="relative w-full lg:w-72 h-48 bg-[#07111a]">
-                      <Image 
-                        src={booking.vehicle?.documentImage?.vehicleImages?.[0] || "/placeholder.png"} 
-                        alt="vehicle" 
-                        fill 
-                        className="object-cover opacity-80"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#0d1f2f] via-transparent to-transparent hidden lg:block" />
-                    </div>
+            {bookings.map((booking: any) => {
+              const now = new Date();
+              const start = new Date(booking.startDate);
+              const end = new Date(booking.endDate);
+              
+              end.setHours(23, 59, 59, 999);
+              const isCurrentlyActive = now >= start && now <= end;
 
-                    {/* Booking Stats */}
-                    <div className="flex-1 p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-                      {/* Column 1: Asset Info */}
-                      <div className="space-y-4">
-                        <div>
-                          <Badge className={`mb-2 font-black uppercase text-[9px] ${getStatusStyle(booking.bookingStatus)}`}>
-                            {booking.bookingStatus}
-                          </Badge>
-                          <h3 className="text-2xl font-black uppercase italic tracking-tighter text-white">
-                            {booking.vehicle?.vehicleType}
-                          </h3>
-                          <p className="text-[10px] text-gray-500 font-bold uppercase">{booking.vehicle?.registrationNumber}</p>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-400">
-                          <MapPin size={14} className="text-red-600" />
-                          <span className="text-[11px] font-bold uppercase">{booking.vehicle?.location?.city}</span>
-                        </div>
+              return (
+                <Card key={booking.id} className="bg-[#0d1f2f] border-white/5 hover:border-white/10 transition-all rounded-[2rem] overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="flex flex-col lg:flex-row">
+                      {/* Vehicle Preview */}
+                      <div className="relative w-full lg:w-72 h-48 bg-[#07111a]">
+                        <Image 
+                          src={booking.vehicle?.documentImage?.vehicleImages?.[0] || "/placeholder.png"} 
+                          alt="vehicle" 
+                          fill 
+                          className="object-cover opacity-80"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#0d1f2f] via-transparent to-transparent hidden lg:block" />
                       </div>
 
-                      {/* Column 2: Renter Details */}
-                      <div className="space-y-3 border-l border-white/5 pl-0 md:pl-8">
-                        <p className="text-[8px] text-red-600 font-black uppercase tracking-widest">Operator Details</p>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400">
-                            <User size={16} />
-                          </div>
+                      {/* Booking Stats */}
+                      <div className="flex-1 p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Column 1: Asset Info */}
+                        <div className="space-y-4">
                           <div>
-                            <p className="text-sm font-black uppercase tracking-tight text-white">{booking.renter?.name}</p>
-                            <div className="flex items-center gap-1 text-gray-500 text-[10px]">
-                              <Phone size={10} />
-                              <span>{booking.renter?.mobile}</span>
+                            <Badge className={`mb-2 font-black uppercase text-[9px] ${getStatusStyle(booking.bookingStatus)}`}>
+                              {booking.bookingStatus}
+                            </Badge>
+                            <h3 className="text-2xl font-black uppercase italic tracking-tighter text-white">
+                              {booking.vehicle?.vehicleType}
+                            </h3>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase">{booking.vehicle?.registrationNumber}</p>
+                          </div>
+                          <div className="flex items-center gap-2 text-gray-400">
+                            <MapPin size={14} className="text-red-600" />
+                            <span className="text-[11px] font-bold uppercase">{booking.vehicle?.location?.city}</span>
+                          </div>
+                        </div>
+
+                        {/* Column 2: Renter Details */}
+                        <div className="space-y-3 border-l border-white/5 pl-0 md:pl-8">
+                          <p className="text-[8px] text-red-600 font-black uppercase tracking-widest">Operator Details</p>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400">
+                              <User size={16} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-black uppercase tracking-tight text-white">{booking.renter?.name}</p>
+                              <div className="flex items-center gap-1 text-gray-500 text-[10px]">
+                                <Phone size={10} />
+                                <span>{booking.renter?.mobile}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Column 3: Timeline & Actions */}
+                        <div className="flex flex-col justify-between border-l border-white/5 pl-0 md:pl-8">
+                          <div>
+                            <p className="text-[8px] text-red-600 font-black uppercase tracking-widest mb-2">Rental Period</p>
+                            <div className="flex items-center gap-2 text-xs font-bold text-gray-300">
+                              <Calendar size={14} className="text-gray-600" />
+                              <span>{new Date(booking.startDate).toLocaleDateString()}</span>
+                              <ChevronRight size={12} className="text-gray-700" />
+                              <span>{new Date(booking.endDate).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 mt-6">
+                            {/* Track Live button shown only if current date is within booking range */}
+                            {isCurrentlyActive ? (
+                              <Link 
+                                href={`/owner/bookings/${booking.bookingId}`}
+                                className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-xl transition-all"
+                              >
+                                <Radar size={14} className="animate-pulse" />
+                                Track Live
+                              </Link>
+                            ) : (
+                              <div className="flex-1 flex items-center justify-center gap-2 bg-white/5 text-gray-500 text-[10px] font-black uppercase tracking-widest py-3 rounded-xl cursor-not-allowed">
+                                Session Ended
+                              </div>
+                            )}
+                            <div className="bg-[#0b1a27] border border-white/5 px-4 flex items-center justify-center rounded-xl">
+                              <span className="text-emerald-400 font-black italic text-xs">Rs.{booking.totalAmount}</span>
                             </div>
                           </div>
                         </div>
                       </div>
-
-                      {/* Column 3: Timeline & Actions */}
-                      <div className="flex flex-col justify-between border-l border-white/5 pl-0 md:pl-8">
-                        <div>
-                          <p className="text-[8px] text-red-600 font-black uppercase tracking-widest mb-2">Rental Period</p>
-                          <div className="flex items-center gap-2 text-xs font-bold text-gray-300">
-                            <Calendar size={14} className="text-gray-600" />
-                            <span>{new Date(booking.startDate).toLocaleDateString()}</span>
-                            <ChevronRight size={12} className="text-gray-700" />
-                            <span>{new Date(booking.endDate).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2 mt-6">
-                          <Link 
-                            href={`/owner/bookings/${booking.bookingId}`}
-                            className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-xl transition-all"
-                          >
-                            <Radar size={14} className="animate-pulse" />
-                            Track Live
-                          </Link>
-                          <div className="bg-[#0b1a27] border border-white/5 px-4 flex items-center justify-center rounded-xl">
-                            <span className="text-emerald-400 font-black italic text-xs">Rs.{booking.totalAmount}</span>
-                          </div>
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
