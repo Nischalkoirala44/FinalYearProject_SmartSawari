@@ -1,40 +1,64 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 
-const Vehicle = sequelize.define("Vehicle", {
-  userId: { 
-    type: DataTypes.INTEGER, 
-    allowNull: false,
-    field: 'userId' 
-  },
-  
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  locationId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'Locations',
-      key: 'id'
-    }
-  },
-  registrationNumber: { type: DataTypes.STRING, allowNull: false },
-  vehicleType: { type: DataTypes.STRING, allowNull: false },
-  vehicleCondition: { type: DataTypes.STRING, allowNull: false },
-  pricePerDay: { type: DataTypes.FLOAT, allowNull: false },
-  documentImage: { type: DataTypes.JSONB, allowNull: false },
-  status: { type: DataTypes.ENUM("pending", "approved", "rejected"), defaultValue: "pending" },
-  remarks: { type: DataTypes.JSONB, allowNull: true },
-  availabilityStatus: { type: DataTypes.ENUM("available", "unavailable"), defaultValue: "available" }
-  
-  
-}, {
-  tableName: "Vehicles",
-  timestamps: true,
-  createdAt: "created_at",
-  updatedAt: "updated_at"
-});
+const Vehicle = sequelize.define(
+  "Vehicle",
+  {
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      field: "userId",
+    },
 
-Vehicle.createVerification = async function(data) {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    locationId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "Locations",
+        key: "id",
+      },
+    },
+    registrationNumber: { type: DataTypes.STRING, allowNull: false },
+    vehicleType: { type: DataTypes.STRING, allowNull: false },
+    vehicleCondition: { type: DataTypes.STRING, allowNull: false },
+    pricePerDay: { type: DataTypes.FLOAT, allowNull: false },
+    documentImage: { type: DataTypes.JSONB, allowNull: false },
+    status: {
+      type: DataTypes.ENUM("pending", "approved", "rejected"),
+      defaultValue: "pending",
+    },
+    remarks: { type: DataTypes.JSONB, allowNull: true },
+    availabilityStatus: {
+      type: DataTypes.ENUM("available", "unavailable"),
+      defaultValue: "available",
+    },
+
+    currentLat: {
+      type: DataTypes.DECIMAL(10, 8),
+      allowNull: true,
+      comment: "Live Latitude during active rental",
+    },
+    currentLng: {
+      type: DataTypes.DECIMAL(11, 8),
+      allowNull: true,
+      comment: "Live Longitude during active rental",
+    },
+    
+    lastTrackedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+  },
+  {
+    tableName: "Vehicles",
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  }
+);
+
+Vehicle.createVerification = async function (data) {
   return await this.create(data);
 };
 

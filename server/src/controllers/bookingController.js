@@ -462,3 +462,54 @@ exports.getMyBookings = async (req, res) => {
     });
   }
 };
+
+// Get all bookings for vehicles owned
+exports.getOwnerBookings = async (req, res) => {
+  try {
+    const ownerId = req.user.id;
+
+    const bookings = await Booking.findAll({
+      include: [
+        {
+          model: Vehicle,
+          as: "vehicle",
+          where: { userId: ownerId }, 
+          attributes: [
+            "id",
+            "registrationNumber",
+            "vehicleType",
+            "pricePerDay",
+            "documentImage",
+          ],
+          include: [
+            {
+              model: Location,
+              as: "location",
+              attributes: ["locationName", "city"],
+            },
+          ],
+        },
+        {
+          model: User,
+          as: "renter",
+          attributes: ["name", "email", "mobile"],
+        },
+      ],
+      // Sort by newest bookings first
+      order: [["createdAt", "DESC"]],
+    });
+
+    res.status(200).json({
+      success: true,
+      count: bookings.length,
+      bookings,
+    });
+  } catch (error) {
+    console.error("Error fetching owner bookings:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch your vehicle bookings",
+      error: error.message,
+    });
+  }
+};

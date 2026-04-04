@@ -1,8 +1,9 @@
 "use client";
 
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+// @ts-ignore
+import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
 import RoutingMachine from "./RoutingMachine";
 import { Timer, Map as MapIcon, Shield, Navigation } from "lucide-react";

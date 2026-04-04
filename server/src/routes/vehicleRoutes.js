@@ -7,7 +7,8 @@ const {
 } = require("../controllers/vehicleController");
 const { getMyVehicles } = require("../controllers/vehicleController");
 const { updateVehicle } = require("../controllers/vehicleController");
-const { deleteVehicle } = require("../controllers/vehicleController")
+const { deleteVehicle } = require("../controllers/vehicleController");
+const trackingController = require("../controllers/trackingController");
 const express = require("express");
 const router = express.Router();
 const authenticateUser = require("../middleware/authMiddleware");
@@ -52,6 +53,10 @@ router.delete(
   "/delete/:id",
   authenticateUser,
   deleteVehicle,
-)
+);
+
+router.put("/track-location", authenticateUser, trackingController.updateLiveLocation);
+
+router.get("/location/:bookingId", authenticateUser, trackingController.getLiveLocation);
 
 module.exports = router;

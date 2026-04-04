@@ -4,16 +4,18 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Edit3, Trash2, Plus, MapPin, CheckCircle,
-  Clock, AlertCircle, Calendar, ShieldCheck
+  Clock, AlertCircle, Calendar, ShieldCheck, Radar, X
 } from 'lucide-react';
 import axios from 'axios';
 import Image from 'next/image';
+import OwnerTracking from '../(components)/OwnerTracking';
 
 export default function MyVehiclesPage() {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [vehicleToDelete, setVehicleToDelete] = useState<number | null>(null);
+  const [trackingVehicle, setTrackingVehicle] = useState<any | null>(null);
 
   useEffect(() => {
     fetchVehicles();
@@ -79,6 +81,30 @@ export default function MyVehiclesPage() {
   return (
     <div className="flex-1 bg-[#0b1a27] min-h-screen px-4 md:px-8 py-10">
       
+      {/* LIVE TRACKING MODAL */}
+      {trackingVehicle && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-[#0b1a27]/95 backdrop-blur-xl" 
+            onClick={() => setTrackingVehicle(null)} 
+          />
+          <div className="relative w-full max-w-5xl animate-in zoom-in-95 duration-300">
+            <button 
+              onClick={() => setTrackingVehicle(null)}
+              className="absolute -top-12 right-0 text-gray-500 hover:text-white flex items-center gap-2 uppercase text-[10px] font-black tracking-[0.2em] transition-all group"
+            >
+              <X size={20} className="group-hover:rotate-90 transition-transform" /> 
+              Terminate Link
+            </button>
+            
+            <OwnerTracking 
+              bookingId={trackingVehicle.activeBookingId} 
+              vehicleName={trackingVehicle.vehicleType} 
+            />
+          </div>
+        </div>
+      )}
+
       {/* DELETE MODAL */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -114,7 +140,6 @@ export default function MyVehiclesPage() {
       )}
 
       <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-        {/* HEADER SECTION */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none">
@@ -143,9 +168,10 @@ export default function MyVehiclesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {vehicles.map((vehicle: any) => {
               const mainImage = vehicle.documentImage?.vehicleImages?.[0] || null;
+              const isUnavailable = vehicle.availabilityStatus?.toLowerCase() === 'unavailable';
+              
               return (
                 <div key={vehicle.id} className="group relative flex flex-col bg-[#0d1f2f] rounded-[2.5rem] overflow-hidden border border-white/5 transition-all duration-500 hover:border-white/20 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
-                  {/* IMAGE HEADER */}
                   <div className="relative h-56 w-full bg-[#07111a] overflow-hidden">
                     {mainImage ? (
                       <Image src={mainImage} alt={vehicle.vehicleType} fill className="object-cover transition-transform duration-700 group-hover:scale-110" unoptimized />
@@ -156,7 +182,6 @@ export default function MyVehiclesPage() {
                     <div className="absolute top-4 left-4 z-10">{getStatusBadge(vehicle.status)}</div>
                   </div>
 
-                  {/* CONTENT */}
                   <div className="p-7 flex flex-col flex-1">
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="text-xl font-black text-white uppercase italic tracking-tighter leading-none">{vehicle.vehicleType}</h3>
@@ -171,9 +196,25 @@ export default function MyVehiclesPage() {
                         <MapPin size={12} className="text-red-600 group-hover/status:animate-pulse" />
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] italic">{vehicle.registrationNumber}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${vehicle.availabilityStatus?.toLowerCase() === 'available' ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]"}`} />
-                        <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${vehicle.availabilityStatus?.toLowerCase() === 'available' ? "text-emerald-500" : "text-red-600"}`}>{vehicle.availabilityStatus}</span>
+                      
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${!isUnavailable ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.5)]"}`} />
+                          <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${!isUnavailable ? "text-emerald-500" : "text-red-600"}`}>
+                            {vehicle.availabilityStatus}
+                          </span>
+                        </div>
+
+                        {/* LIVE TRACK BUTTON - Only shows if rented */}
+                        {isUnavailable && (
+                          <button 
+                            onClick={() => setTrackingVehicle(vehicle)}
+                            className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-tighter hover:bg-red-700 transition-all animate-pulse"
+                          >
+                            <Radar size={10} className="animate-spin-slow" />
+                            Track Asset
+                          </button>
+                        )}
                       </div>
                     </div>
 

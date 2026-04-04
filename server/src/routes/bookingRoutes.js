@@ -29,4 +29,6 @@ router.get("/user-bookings",
     authenticateUser,
     bookingController.getMyBookings);
 
+router.get("/owner-bookings", authenticateUser, bookingController.getOwnerBookings);
+
 module.exports = router;
