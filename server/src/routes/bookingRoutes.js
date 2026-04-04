@@ -31,4 +31,6 @@ router.get("/user-bookings",
 
 router.get("/owner-bookings", authenticateUser, bookingController.getOwnerBookings);
 
+router.post("/:bookingId/cancel", authenticateUser, bookingController.cancelBooking);
+
 module.exports = router;

@@ -17,7 +17,7 @@ exports.createBookingIntent = async (req, res) => {
     const overlapping = await Booking.findOne({
       where: {
         vehicleId,
-        bookingStatus: "confirmed",
+        bookingStatus: { [Op.in]: ["confirmed", "pending"] },
         [Op.and]: [
           { startDate: { [Op.lte]: endDate } },
           { endDate: { [Op.gte]: startDate } },
@@ -126,7 +126,7 @@ exports.releasePartialAmount = async (req, res) => {
     const { customAmount } = req.body;
 
     const booking = await Booking.findOne({
-      where: { bookingId, paymentStatus: "paid" },
+      where: { bookingId, paymentStatus: "paid", bookingStatus: "confirmed" },
       include: [{ model: Vehicle, as: "vehicle" }],
     });
 
@@ -182,9 +182,14 @@ exports.releaseBookingAmount = async (req, res) => {
   try {
     const { bookingId } = req.params;
 
-    // 1. Fetch the booking and owner details
+    // Fetch the booking and owner details
     const booking = await Booking.findOne({
-      where: { bookingId, paymentStatus: "paid", amountReleased: false },
+      where: {
+        bookingId,
+        paymentStatus: "paid",
+        bookingStatus: "confirmed",
+        amountReleased: false,
+      },
       include: [
         {
           model: Vehicle,
@@ -204,12 +209,10 @@ exports.releaseBookingAmount = async (req, res) => {
     const ownerShare = parseFloat(booking.totalAmount) * 0.9;
 
     if (!owner.esewaMobile) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Owner has no eSewa mobile registered.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Owner has no eSewa mobile registered.",
+      });
     }
 
     const ESEWA_PAYOUT_URL =
@@ -259,6 +262,7 @@ exports.getPendingPayouts = async (req, res) => {
     const pendingBookings = await Booking.findAll({
       where: {
         paymentStatus: "paid",
+        bookingStatus: "confirmed",
         amountReleased: false,
       },
       include: [
@@ -378,38 +382,90 @@ exports.getBookingDetailsForRenter = async (req, res) => {
 exports.cancelBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
+    const userId = req.user.id;
+
     const booking = await Booking.findOne({
-      where: { bookingId, renterId: req.user.id },
+      where: {
+        bookingId,
+        renterId: userId,
+      },
+      include: [
+        {
+          model: Vehicle,
+          as: "vehicle",
+          attributes: ["registrationNumber", "userId"],
+        },
+      ],
     });
 
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
-
-    if (new Date(booking.startDate) <= new Date()) {
-      return res
-        .status(400)
-        .json({ message: "Cannot cancel a trip that has already started." });
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking record not located.",
+      });
     }
 
-    await booking.update({ bookingStatus: "cancelled" });
+    if (booking.bookingStatus === "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "This booking is already cancelled.",
+      });
+    }
 
-    const vehicle = await Vehicle.findByPk(booking.vehicleId);
+    const now = new Date();
+    const tripStart = new Date(booking.startDate);
+    tripStart.setHours(0, 0, 0, 0);
 
-    // Notify the Owner about the cancellation
+    // If today is the start date or later, block cancellation
+    if (now >= tripStart) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot cancel. The rental window has already begun or passed.",
+      });
+    }
+
+    const isPaid = booking.paymentStatus === "paid";
+    const updatedPaymentStatus = isPaid ? "refund_pending" : "pending"; 
+
+    await booking.update({
+      bookingStatus: "cancelled",
+      paymentStatus: updatedPaymentStatus,
+    });
+
+    // Notify Owner
+    if (booking.vehicle) {
+      await Notification.create({
+        userId: booking.vehicle.userId,
+        title: "Booking Cancelled ⚠️",
+        message: `Renter cancelled booking ${bookingId} for ${booking.vehicle.registrationNumber}.`,
+        type: "BOOKING_CANCELLED",
+      });
+    }
+
+    // Notify Renter
     await Notification.create({
-      userId: vehicle.userId,
-      title: "Booking Cancelled ⚠️",
-      message: `The booking for ${vehicle.registrationNumber} from ${booking.startDate} has been cancelled by the renter.`,
+      userId: userId,
+      title: "Cancellation Confirmed",
+      message: isPaid
+        ? "Your booking is cancelled. A full refund is being processed to your eSewa account."
+        : "Your pending booking has been removed.",
       type: "BOOKING_CANCELLED",
     });
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Booking cancelled successfully. Refund will be processed.",
-      });
+    res.status(200).json({
+      success: true,
+      message: isPaid
+        ? "Booking cancelled. Refund request initiated."
+        : "Booking cancelled successfully.",
+      refundInitiated: isPaid,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Cancellation Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error during cancellation.",
+      error: error.message,
+    });
   }
 };
 
@@ -473,7 +529,7 @@ exports.getOwnerBookings = async (req, res) => {
         {
           model: Vehicle,
           as: "vehicle",
-          where: { userId: ownerId }, 
+          where: { userId: ownerId },
           attributes: [
             "id",
             "registrationNumber",
