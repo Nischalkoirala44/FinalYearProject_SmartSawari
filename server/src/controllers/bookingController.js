@@ -169,6 +169,13 @@ exports.releasePartialAmount = async (req, res) => {
       amountReleased: newReleasedTotal >= maxOwnerShare,
     });
 
+    await Notification.create({
+      userId: ownerId,
+      title: "Partial Payout Released 💸",
+      message: `Rs. ${requestedRelease} has been released to your wallet for Booking ${bookingId}. Total released: Rs. ${newReleasedTotal.toFixed(2)}.`,
+      type: "PARTIAL_PAYOUT",
+    });
+
     res.status(200).json({
       success: true,
       message: `Rs. ${requestedRelease} released. Owner has received Rs. ${newReleasedTotal} of their Rs. ${maxOwnerShare} total share.`,
@@ -237,6 +244,13 @@ exports.releaseBookingAmount = async (req, res) => {
     );
 
     await booking.update({ amountReleased: true });
+
+    await Notification.create({
+      userId: owner.id,
+      title: "Payout Released! 💸",
+      message: `Rs. ${ownerShare} has been transferred to your eSewa account (${owner.esewaMobile}) for Booking ${bookingId}.`,
+      type: "PAYOUT_RELEASED",
+    });
 
     await sendPayoutReceipt(owner.email, {
       bookingId: booking.bookingId,

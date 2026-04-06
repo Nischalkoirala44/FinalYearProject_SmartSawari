@@ -39,7 +39,7 @@ const Booking = sequelize.define(
       allowNull: false,
     },
     paymentStatus: {
-      type: DataTypes.ENUM("pending", "paid", "failed"),
+      type: DataTypes.ENUM("pending", "paid", "failed", "refund_pending"),
       defaultValue: "pending",
     },
     bookingStatus: {

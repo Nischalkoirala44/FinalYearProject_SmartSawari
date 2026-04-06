@@ -34,7 +34,8 @@ exports.updateLiveLocation = async (req, res) => {
     res.status(200).json({ 
       success: true, 
       message: "Location synchronized.",
-      updatedVehicleId: booking.vehicleId 
+      updatedVehicleId: booking.vehicleId,
+      newLocation: { lat, lng }
     });
 
   } catch (error) {

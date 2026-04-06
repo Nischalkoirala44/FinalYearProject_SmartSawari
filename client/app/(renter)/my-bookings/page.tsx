@@ -62,9 +62,10 @@ const MyBookings: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showMap, setShowMap] = useState<boolean>(false);
   const [filterType, setFilterType] = useState<"Active" | "Past">("Active");
-  
+
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -89,7 +90,7 @@ const MyBookings: React.FC = () => {
 
   const handleCancelBooking = async () => {
     if (!cancellingId) return;
-    
+
     setIsProcessing(true);
     try {
       const token = localStorage.getItem("token");
@@ -105,7 +106,9 @@ const MyBookings: React.FC = () => {
         fetchBookings();
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || "Cancellation failed");
+      setErrorMessage(
+        err.response?.data?.message || "We couldn't process your cancellation right now. Please try again later."
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -139,7 +142,33 @@ const MyBookings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0b1a27] text-white p-4 md:p-10 font-sans selection:bg-red-600/30 relative">
-      
+
+      {/* ERROR POPUP OVERLAY */}
+      {errorMessage && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[300] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="bg-[#0d1f2f] border border-red-500/30 w-full max-w-md rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(220,38,38,0.15)] text-center">
+            <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+              <AlertTriangle className="text-red-500" size={40} />
+            </div>
+            <h3 className="text-2xl font-black uppercase italic tracking-tight mb-2 text-white">
+              Action <span className="text-red-600">Failed</span>
+            </h3>
+            <p className="text-gray-400 text-sm mb-8 leading-relaxed">
+              {errorMessage}
+            </p>
+            <button
+              onClick={() => {
+                setErrorMessage(null);
+                setCancellingId(null);
+              }}
+              className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 font-black py-4 rounded-2xl uppercase tracking-widest transition-all"
+            >
+              Dismiss & Return
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* CANCELLATION POPUP OVERLAY */}
       {cancellingId && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
@@ -149,17 +178,17 @@ const MyBookings: React.FC = () => {
             </div>
             <h3 className="text-2xl font-black uppercase italic tracking-tight mb-2">Cancel Booking?</h3>
             <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-              You are about to cancel booking <span className="text-white font-mono">{cancellingId}</span>. 
+              You are about to cancel booking <span className="text-white font-mono">{cancellingId}</span>.
             </p>
             <div className="flex flex-col gap-3">
-              <button 
+              <button
                 disabled={isProcessing}
                 onClick={handleCancelBooking}
                 className="w-full bg-orange-600 hover:bg-orange-500 text-white font-black py-4 rounded-2xl uppercase tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isProcessing ? <Loader2 className="animate-spin" size={18} /> : "Confirm Cancellation"}
               </button>
-              <button 
+              <button
                 onClick={() => setCancellingId(null)}
                 className="w-full bg-white/5 hover:bg-white/10 text-gray-400 font-bold py-4 rounded-2xl uppercase tracking-widest transition-all"
               >
@@ -213,12 +242,12 @@ const MyBookings: React.FC = () => {
 
             {displayBookings.map((booking) => {
               const now = new Date();
-              now.setHours(0,0,0,0);
+              now.setHours(0, 0, 0, 0);
               const start = new Date(booking.startDate);
-              start.setHours(0,0,0,0);
+              start.setHours(0, 0, 0, 0);
               const end = new Date(booking.endDate);
               end.setHours(23, 59, 59, 999);
-              
+
               const isLive = now >= start && now <= end;
               const canCancel = now <= start && booking.bookingStatus !== 'cancelled';
 
@@ -281,13 +310,12 @@ const MyBookings: React.FC = () => {
                   </div>
 
                   <div className="col-span-2 flex items-center justify-between md:justify-end gap-4">
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border ${
-                      booking.bookingStatus === 'pending' 
-                      ? 'border-amber-500/20 text-amber-400 bg-amber-500/5' 
-                      : booking.bookingStatus === 'cancelled'
-                      ? 'border-red-500/20 text-red-500 bg-red-500/5'
-                      : 'border-white/10 text-gray-500'
-                    }`}>
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border ${booking.bookingStatus === 'pending'
+                        ? 'border-amber-500/20 text-amber-400 bg-amber-500/5'
+                        : booking.bookingStatus === 'cancelled'
+                          ? 'border-red-500/20 text-red-500 bg-red-500/5'
+                          : 'border-white/10 text-gray-500'
+                      }`}>
                       {booking.bookingStatus}
                     </span>
                     <ChevronIcon />
@@ -338,7 +366,7 @@ const MyBookings: React.FC = () => {
                           <Navigation size={16} fill="currentColor" /> View Live Route
                         </button>
                       ) : selectedBooking.bookingStatus !== 'cancelled' ? (
-                        <button 
+                        <button
                           onClick={() => setCancellingId(selectedBooking.bookingId)}
                           className="bg-orange-600/20 border border-orange-600/30 text-orange-500 py-5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-orange-600 hover:text-white transition-all"
                         >
