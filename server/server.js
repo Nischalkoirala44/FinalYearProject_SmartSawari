@@ -35,7 +35,7 @@ const app = express();
 // Enable CORS for frontend
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: [process.env.CLIENT_URL, "http://localhost:3000"],
     credentials: true,
   })
 );
@@ -47,17 +47,16 @@ app.use(cookieParser());
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: "http://localhost:3000", credentials: true }
+  cors: { origin: [process.env.CLIENT_URL, "http://localhost:3000"], credentials: true }
 });
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Test route
 app.get("/", async (req, res) => {
   try {
-    const result = await client.query("SELECT NOW()");
-    res.send(result.rows);
+    const [results] = await client.query("SELECT NOW()");
+    res.send(results);
   } catch (err) {
     console.error(err);
     res.status(500).send("Server error");

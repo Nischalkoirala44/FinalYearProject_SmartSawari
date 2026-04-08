@@ -222,8 +222,7 @@ exports.releaseBookingAmount = async (req, res) => {
       });
     }
 
-    const ESEWA_PAYOUT_URL =
-      "https://uat.esewa.com.np/api/v1/disbursements/transfer";
+    const ESEWA_PAYOUT_URL = `${process.env.ESEWA_PAYOUT_URL} || https://uat.esewa.com.np/api/v1/disbursements/transfer`;
 
     const payoutPayload = {
       merchant_id: process.env.ESEWA_PRODUCT_CODE,
