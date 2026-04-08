@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { Sequelize } = require("sequelize");
 
 // Railway provides the full connection string in the DATABASE_URL variable
