@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from "../../../context/AuthContext";
-import { Bell} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import NotificationBell from "@/components/NotificationBell";
 

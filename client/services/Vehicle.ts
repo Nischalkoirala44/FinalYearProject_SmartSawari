@@ -1,13 +1,12 @@
 import type { VehicleResponse, VehiclesResponse } from "../types/Vehicle";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Fetch approved vehicles
 export const fetchVehicles = async (
   params: any = {},
 ): Promise<VehiclesResponse | null> => {
   try {
-    // Clean up params: Remove "All" or empty strings so the backend doesn't get confused
     const cleanParams = Object.fromEntries(
       Object.entries(params).filter(
         ([_, v]) => v !== "All" && v !== "" && v !== undefined,

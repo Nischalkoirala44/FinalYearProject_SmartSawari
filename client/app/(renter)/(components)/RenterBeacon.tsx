@@ -7,6 +7,8 @@ export default function RenterBeacon({ bookingId, token }: { bookingId: number, 
   const lastCoords = useRef<{ lat: number; lng: number } | null>(null);
   const watchIdRef = useRef<number | null>(null);
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     if (!navigator.geolocation) return;
 
@@ -26,7 +28,7 @@ export default function RenterBeacon({ bookingId, token }: { bookingId: number, 
         }
 
         try {
-          await fetch(`http://localhost:3001/api/vehicles/track-location`, {
+          await fetch(`${API_URL}/api/vehicles/track-location`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",

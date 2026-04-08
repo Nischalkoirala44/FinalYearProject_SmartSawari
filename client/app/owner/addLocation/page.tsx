@@ -25,6 +25,8 @@ interface LocationFormData {
     longitude: number | '';
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const AddLocationForm: React.FC = () => {
     const [position, setPosition] = useState<[number, number] | null>(null);
     const [loadingLocation, setLoadingLocation] = useState(false);
@@ -35,7 +37,7 @@ const AddLocationForm: React.FC = () => {
 
     const fetchAddressFromCoords = async (lat: number, lng: number) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/proxy/geocode?lat=${lat}&lon=${lng}`);
+            const response = await fetch(`${API_URL}/api/proxy/geocode?lat=${lat}&lon=${lng}`);
             if (!response.ok) throw new Error('Proxy error');
             const data = await response.json();
             const address = data.address;
@@ -78,7 +80,7 @@ const AddLocationForm: React.FC = () => {
         setIsSubmitting(true);
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:3001/api/locations/add', formData, {
+            await axios.post(`${API_URL}/api/locations/add`, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             toast.success("Hub established successfully");

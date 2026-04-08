@@ -12,6 +12,8 @@ interface EarningStats {
   pendingAmount: number;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function OwnerEarnings() {
   const [stats, setStats] = useState<EarningStats>({
     availableBalance: 0,
@@ -32,7 +34,7 @@ export default function OwnerEarnings() {
     setError(null);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3001/api/bookings/stats", {
+      const res = await fetch(`${API_URL}/api/bookings/stats`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -64,7 +66,7 @@ export default function OwnerEarnings() {
     if (!details) return alert("Enter payment details");
 
     const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:3001/api/withdrawals/request", {
+    const res = await fetch(`${API_URL}/api/withdrawals/request`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

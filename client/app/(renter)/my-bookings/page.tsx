@@ -22,6 +22,8 @@ import {
 
 import RenterBeacon from "../(components)/RenterBeacon";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const BookingMap = dynamic(() => import("../(components)/BookingMap"), {
   ssr: false,
   loading: () => (
@@ -74,7 +76,7 @@ const MyBookings: React.FC = () => {
   const fetchBookings = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:3001/api/bookings/user-bookings", {
+      const response = await axios.get(`${API_URL}/api/bookings/user-bookings`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.data.success) {
@@ -95,7 +97,7 @@ const MyBookings: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `http://localhost:3001/api/bookings/${cancellingId}/cancel`,
+        `${API_URL}/api/bookings/${cancellingId}/cancel`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -10,6 +10,8 @@ interface ReleaseButtonProps {
   amountAlreadyReleased: number;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function ReleaseButton({ 
   bookingId, 
   isReleased, 
@@ -29,7 +31,7 @@ export default function ReleaseButton({
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3001/api/bookings/release-amount/${bookingId}`, {
+      const res = await fetch(`${API_URL}/api/bookings/release-amount/${bookingId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

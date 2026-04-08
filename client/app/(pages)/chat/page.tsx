@@ -14,11 +14,13 @@ export default function MessengerPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
   const handleClearChat = async () => {
   if (!activeChat || !token) return;
 
   try {
-    const res = await fetch(`http://localhost:3001/api/chat/clear/${activeChat.bookingId}`, {
+    const res = await fetch(`${API_URL}/api/chat/clear/${activeChat.bookingId}`, {
       method: "DELETE",
       headers: { "Authorization": `Bearer ${token}` }
     });
@@ -36,7 +38,7 @@ export default function MessengerPage() {
   const fetchInbox = async () => {
     if (!token) return;
     try {
-      const res = await fetch(`http://localhost:3001/api/chat/inbox`, {
+      const res = await fetch(`${API_URL}/api/chat/inbox`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       const data = await res.json();
@@ -56,7 +58,7 @@ export default function MessengerPage() {
     if (!token) return;
 
     try {
-      await fetch(`http://localhost:3001/api/chat/seen/${chat.bookingId}`, {
+      await fetch(`${API_URL}/api/chat/seen/${chat.bookingId}`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });

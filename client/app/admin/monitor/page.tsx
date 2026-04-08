@@ -6,6 +6,8 @@ import { AdminUserTable } from "../(components)/AdminUserTable";
 import { AdminCharts } from "../(components)/AdminCharts";
 import { Loader2, AlertCircle } from "lucide-react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function AdminDashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -16,7 +18,7 @@ export default function AdminDashboard() {
 useEffect(() => {
   const fetchUsers = async () => {
     const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:3001/api/admin/users", {
+    const res = await fetch(`${API_URL}/api/admin/users`, {
        headers: { Authorization: `Bearer ${token}` }
     });
     const result = await res.json();
@@ -31,7 +33,7 @@ useEffect(() => {
       try {
         const token = localStorage.getItem("token");
         
-        const response = await fetch("http://localhost:3001/api/admin/stats", {
+        const response = await fetch(`${API_URL}/api/admin/stats`, {
           headers: { 
             Authorization: `Bearer ${token}` 
           }

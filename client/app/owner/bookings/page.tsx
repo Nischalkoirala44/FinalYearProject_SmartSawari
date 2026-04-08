@@ -11,6 +11,8 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function OwnerBookingsPage() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +21,7 @@ export default function OwnerBookingsPage() {
     const fetchOwnerBookings = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get("http://localhost:3001/api/bookings/owner-bookings", {
+        const res = await axios.get(`${API_URL}/api/bookings/owner-bookings`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data.success) setBookings(res.data.bookings);

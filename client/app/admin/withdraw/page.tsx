@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function AdminWithdrawals() {
   const [requests, setRequests] = useState([]);
 
   const fetchRequests = async () => {
     const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:3001/api/withdrawals/admin/requests", {
+    const res = await fetch(`${API_URL}/api/withdrawals/admin/requests`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -17,7 +19,7 @@ export default function AdminWithdrawals() {
 
   const handleAction = async (id: number, status: string) => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:3001/api/withdrawals/admin/requests/${id}`, {
+    const res = await fetch(`${API_URL}/api/withdrawals/admin/requests/${id}`, {
       method: "PATCH",
       headers: { 
         "Content-Type": "application/json",

@@ -16,6 +16,8 @@ export default function MyVehiclesPage() {
   const [vehicleToDelete, setVehicleToDelete] = useState<number | null>(null);
   const [trackingVehicle, setTrackingVehicle] = useState<any | null>(null);
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     fetchVehicles();
   }, []);
@@ -23,7 +25,7 @@ export default function MyVehiclesPage() {
   const fetchVehicles = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get("http://localhost:3001/api/vehicles/owner-vehicles", {
+      const res = await axios.get(`${API_URL}/api/vehicles/owner-vehicles`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -46,7 +48,7 @@ export default function MyVehiclesPage() {
     if (!vehicleToDelete) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3001/api/vehicles/delete/${vehicleToDelete}`, {
+      await axios.delete(`${API_URL}/api/vehicles/delete/${vehicleToDelete}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setVehicles(vehicles.filter((v: any) => v.id !== vehicleToDelete));

@@ -15,6 +15,8 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
   const [editText, setEditText] = useState("");
   const [showMenu, setShowMenu] = useState<string | null>(null);
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     if (!socket.connected) socket.connect();
 
@@ -69,7 +71,7 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
 
       if (isOtherPerson && !lastMsg.is_seen) {
         try {
-          await fetch(`http://localhost:3001/api/chat/seen/${bookingId}`, {
+          await fetch(`${API_URL}/api/chat/seen/${bookingId}`, {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -105,7 +107,7 @@ export default function SmartChat({ bookingId, user, token, ownerName, ownerImag
 
   const handleUpdateMessage = async (msgId: any, action: 'edit' | 'delete', text?: string) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/chat/message/${msgId}`, {
+      const res = await fetch(`${API_URL}/api/chat/message/${msgId}`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,

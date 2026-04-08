@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Car, User, Calendar, ArrowRight, Loader2, Send, DollarSign, Info } from "lucide-react";
 import ReleaseButton from "../(components)/ReleaseAmount";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function AdminPayoutDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +14,7 @@ export default function AdminPayoutDashboard() {
 
   const fetchPending = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/bookings/pending-payouts");
+      const res = await fetch(`${API_URL}/api/bookings/pending-payouts`);
       const data = await res.json();
       if (data.success) {
         setBookings(data.bookings);
@@ -39,7 +41,7 @@ export default function AdminPayoutDashboard() {
     setIsProcessing(bookingId);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3001/api/bookings/partial-release/${bookingId}`, {
+      const res = await fetch(`${API_URL}/api/bookings/partial-release/${bookingId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

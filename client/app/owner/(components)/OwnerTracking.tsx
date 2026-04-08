@@ -14,6 +14,8 @@ interface BookingMapProps {
   showRoute: boolean;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const BookingMap = dynamic<BookingMapProps>(
   () => import("../../(renter)/(components)/BookingMap"), 
   {
@@ -39,7 +41,7 @@ const OwnerTracking = ({ bookingId, vehicleName }: { bookingId: string, vehicleN
   const fetchLiveLocation = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`http://localhost:3001/api/vehicles/location/${bookingId}`, {
+      const res = await axios.get(`${API_URL}/api/vehicles/location/${bookingId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
