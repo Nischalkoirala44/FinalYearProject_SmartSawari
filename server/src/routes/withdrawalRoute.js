@@ -1,4 +1,4 @@
-const {requestWithdrawal, getAllWithdrawals, updateWithdrawalStatus} = require("../controllers/withDrawalController");
+const {requestWithdrawal, getAllWithdrawals, updateWithdrawalStatus} = require("../controllers/withdrawalController");
 const express = require("express");
 const router = express.Router();
 const authenticateUser = require("../middleware/authMiddleware");
