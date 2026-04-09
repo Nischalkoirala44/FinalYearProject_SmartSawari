@@ -1,15 +1,18 @@
 "use client";
+
+import { useState, useEffect } from "react"; // Added useState here
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Sidebar from "@/app/owner/(components)/OwnerSidebar";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react"; // Assuming you have lucide-react
+import { Loader2 } from "lucide-react";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -37,7 +40,10 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   if (user.role === "owner") {
     return (
       <div className="flex h-screen w-full bg-[#0a1620] overflow-hidden">
-        <Sidebar /> 
+        
+        {/* Passed the required props down to fix the build error */}
+        <Sidebar isOpen={sidebarOpen} setIsOpenAction={setSidebarOpen} /> 
+        
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto p-8 custom-scrollbar">
           {children}
         </div>
@@ -45,7 +51,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     );
   }
 
-  // RENTER LAYOUT (Default fallback)
+  // RENTER LAYOUT
   return (
     <div className="flex flex-col min-h-screen bg-[#0a1620]">
       <Navbar />
