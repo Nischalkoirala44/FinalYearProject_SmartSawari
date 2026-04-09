@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { Car, Menu, X, LogOut, User, Settings, MessageCircleIcon } from "lucide-react";
+import { Car, Menu, X, LogOut, User, CarIcon, MessageCircleIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -137,9 +137,9 @@ export default function Navbar() {
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild className="focus:bg-white/5 focus:text-white cursor-pointer py-3">
-                                            <Link href="/settings" className="flex items-center">
-                                                <Settings className="mr-3 h-4 w-4 text-gray-400" />
-                                                <span>Settings</span>
+                                            <Link href="/my-bookings" className="flex items-center">
+                                                <CarIcon className="mr-3 h-4 w-4 text-gray-400" />
+                                                <span>My Bookings</span>
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator className="bg-gray-700" />
@@ -215,7 +215,7 @@ export default function Navbar() {
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 gap-4">
-                                    <Button asChild variant="outline" className="h-14 border-gray-700 text-white font-bold rounded-xl" onClick={() => setMobileMenuOpen(false)}>
+                                    <Button asChild variant="outline" className="h-14 border-gray-700 red-600 font-bold rounded-xl" onClick={() => setMobileMenuOpen(false)}>
                                         <Link href="/login">Login</Link>
                                     </Button>
                                     <Button asChild className="h-14 bg-red-600 font-bold rounded-xl" onClick={() => setMobileMenuOpen(false)}>

@@ -15,7 +15,7 @@ type LoginFormInputs = {
 };
 
 export default function LoginPage() {
-  const { user, login } = useAuth();
+  const { user, login, loading: authLoading } = useAuth();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -91,6 +91,14 @@ export default function LoginPage() {
       }
     }
   }, [user, router]);
+
+    if (authLoading || user) {
+    return (
+      <div className="min-h-screen bg-red-100 flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
 
   return (
