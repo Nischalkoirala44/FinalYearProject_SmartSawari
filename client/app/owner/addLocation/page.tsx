@@ -37,7 +37,7 @@ const AddLocationForm: React.FC = () => {
 
     const fetchAddressFromCoords = async (lat: number, lng: number) => {
         try {
-            const response = await fetch(`${API_URL}/api/proxy/geocode?lat=${lat}&lon=${lng}`);
+            const response = await fetch(`${API_URL}/api/locations/proxy/geocode?lat=${lat}&lon=${lng}`);
             if (!response.ok) throw new Error('Proxy error');
             const data = await response.json();
             const address = data.address;
