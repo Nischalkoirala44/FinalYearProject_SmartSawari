@@ -10,24 +10,27 @@ exports.proxyGeocode = async (req, res) => {
   }
 
   try {
-    const response = await axios.get('https://nominatim.openstreetmap.org/reverse', {
+    const response = await axios.get(`https://api.bigdatacloud.net/data/reverse-geocode-client`, {
       params: {
-        lat: lat,
-        lon: lon,
-        format: 'json'
-      },
-      headers: {
-        'User-Agent': 'SmartSawari-FinalYearProject (koiralanischal01@gmail.com)',
-        'Accept-Language': 'en-US,en;q=0.9'
+        latitude: lat,
+        longitude: lon,
+        localityLanguage: 'en'
       }
     });
 
-    // Send the OSM data back to your Next.js frontend
-    res.status(200).json(response.data);
+    const formattedData = {
+      address: {
+        state: response.data.principalSubdivision,
+        city: response.data.city || response.data.locality,
+      },
+      display_name: `${response.data.locality || ''}, ${response.data.principalSubdivision || ''}, ${response.data.countryName || ''}`
+    };
+
+    res.status(200).json(formattedData);
 
   } catch (error) {
-    console.error("OSM Proxy Error:", error.response ? error.response.data : error.message);
-    res.status(502).json({ error: "Failed to fetch address from OSM" });
+    console.error("Geocode Proxy Error:", error.message);
+    res.status(502).json({ error: "Failed to fetch address" });
   }
 };
 
