@@ -72,7 +72,7 @@ export default function AdminPayoutDashboard() {
       const token = localStorage.getItem("token");
       const endpoint = releaseType === "partial" 
         ? `/api/bookings/partial-release/${bookingId}` 
-        : `/api/bookings/release/${bookingId}`;
+        : `/api/bookings/release-amount/${bookingId}`;
 
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
