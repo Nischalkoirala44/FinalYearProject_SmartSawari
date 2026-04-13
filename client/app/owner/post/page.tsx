@@ -174,6 +174,7 @@ export default function VerificationFormContent() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
 
     const { registrationNumber, vehicleType, vehicleCondition, pricePerDay, locationId } = formData;
 
@@ -203,8 +204,12 @@ export default function VerificationFormContent() {
         }
       });
 
+      const token = localStorage.getItem('token');
+
       const res = await fetch(`${API_URL}/api/verifications/create`, { 
         method: "POST", 
+
+        headers: { "Authorization": `Bearer ${token}` },
         credentials: "include", 
         body 
       });

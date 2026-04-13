@@ -4,10 +4,10 @@ const jwt = require("jsonwebtoken");
 const verifyRole = (allowedRoles) => {
   return (req, res, next) => {
     try {
-      const token = req.cookies?.token;
+      const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
 
       if (!token) {
-         console.log("No token found in cookies");
+         console.log("No token found in cookies or authorization header");
          return res.status(401).json({ message: "Unauthorized: No token" });
        }
 
