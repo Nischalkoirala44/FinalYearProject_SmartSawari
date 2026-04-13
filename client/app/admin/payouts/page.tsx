@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Car, User, Calendar, ArrowRight, Loader2, Send, DollarSign, CheckCircle2, XCircle, Banknote } from "lucide-react";
-import ReleaseButton from "../(components)/ReleaseAmount";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -15,12 +14,14 @@ export default function AdminPayoutDashboard() {
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
     status: "confirm" | "success" | "error";
+    releaseType: "partial" | "full" | null;
     message: string;
     bookingId: string | null;
     amount: string | null;
   }>({
     isOpen: false,
     status: "confirm",
+    releaseType: null,
     message: "",
     bookingId: null,
     amount: null,
@@ -51,35 +52,46 @@ export default function AdminPayoutDashboard() {
   const initiatePartialRelease = (bookingId: string) => {
     const amount = partialAmounts[bookingId];
     if (!amount || parseFloat(amount) <= 0) {
-      setModalConfig({ isOpen: true, status: "error", message: "Please enter a valid transfer amount greater than 0.", bookingId: null, amount: null });
+      setModalConfig({ isOpen: true, status: "error", releaseType: "partial", message: "Please enter a valid transfer amount greater than 0.", bookingId: null, amount: null });
       return;
     }
-    setModalConfig({ isOpen: true, status: "confirm", message: "", bookingId, amount });
+    setModalConfig({ isOpen: true, status: "confirm", releaseType: "partial", message: "", bookingId, amount });
   };
 
-  const executePartialRelease = async () => {
-    const { bookingId, amount } = modalConfig;
+  const initiateFullRelease = (bookingId: string, remainingAmount: number) => {
+    if (remainingAmount <= 0) return;
+    setModalConfig({ isOpen: true, status: "confirm", releaseType: "full", message: "", bookingId, amount: remainingAmount.toString() });
+  };
+
+  const executeRelease = async () => {
+    const { bookingId, amount, releaseType } = modalConfig;
     if (!bookingId || !amount) return;
 
     setIsProcessing(bookingId);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/api/bookings/partial-release/${bookingId}`, {
+      const endpoint = releaseType === "partial" 
+        ? `/api/bookings/partial-release/${bookingId}` 
+        : `/api/bookings/release/${bookingId}`;
+
+      const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ customAmount: parseFloat(amount) })
+        body: releaseType === "partial" ? JSON.stringify({ customAmount: parseFloat(amount) }) : undefined
       });
 
       const data = await res.json();
       if (data.success) {
-        setModalConfig({ isOpen: true, status: "success", message: data.message, bookingId: null, amount: null });
+        setModalConfig({ isOpen: true, status: "success", releaseType, message: data.message, bookingId: null, amount: null });
         fetchPending();
-        setPartialAmounts((prev) => ({ ...prev, [bookingId]: "" }));
+        if (releaseType === "partial") {
+          setPartialAmounts((prev) => ({ ...prev, [bookingId]: "" }));
+        }
       } else {
-        setModalConfig({ isOpen: true, status: "error", message: data.message || "Failed to process release.", bookingId: null, amount: null });
+        setModalConfig({ isOpen: true, status: "error", releaseType, message: data.message || "Failed to process release.", bookingId: null, amount: null });
       }
     } catch (err) {
-      setModalConfig({ isOpen: true, status: "error", message: "A network error occurred. Please try again.", bookingId: null, amount: null });
+      setModalConfig({ isOpen: true, status: "error", releaseType, message: "A network error occurred. Please try again.", bookingId: null, amount: null });
     } finally {
       setIsProcessing(null);
     }
@@ -122,6 +134,7 @@ export default function AdminPayoutDashboard() {
               const maxShare = b.totalAmount * 0.9;
               const paid = parseFloat(b.amountAlreadyReleased || 0);
               const remaining = maxShare - paid;
+              const isFullyReleased = b.amountReleased || remaining <= 0;
 
               return (
                 <tr key={b.id} className="hover:bg-slate-50/50 transition-colors">
@@ -163,7 +176,7 @@ export default function AdminPayoutDashboard() {
                         <span className="text-[9px] font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-tighter">
                           Already Released: Rs. {paid.toLocaleString()}
                         </span>
-                        <span className={`text-[9px] font-black mt-1 px-2 py-0.5 rounded uppercase tracking-tighter ${remaining <= 0 ? 'bg-slate-100 text-slate-400' : 'bg-rose-50 text-rose-500'}`}>
+                        <span className={`text-[9px] font-black mt-1 px-2 py-0.5 rounded uppercase tracking-tighter ${isFullyReleased ? 'bg-slate-100 text-slate-400' : 'bg-rose-50 text-rose-500'}`}>
                           Remaining: Rs. {Math.max(0, remaining).toLocaleString()}
                         </span>
                       </div>
@@ -173,39 +186,38 @@ export default function AdminPayoutDashboard() {
                   {/* Actions */}
                   <td className="p-6">
                     <div className="flex flex-col items-center gap-3">
-                      <ReleaseButton
-                        bookingId={b.bookingId}
-                        isReleased={b.amountReleased || (b.amountAlreadyReleased >= b.totalAmount * 0.9)}
-                        totalAmount={b.totalAmount}
-                        amountAlreadyReleased={b.amountAlreadyReleased}
-                      />
-
-                      {!b.amountReleased && remaining > 0 && (
-                        <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 focus-within:border-blue-400 transition-all">
-                          <input
-                            type="number"
-                            max={remaining}
-                            value={partialAmounts[b.bookingId] || ""}
-                            onChange={(e) => setPartialAmounts({ ...partialAmounts, [b.bookingId]: e.target.value })}
-                            placeholder="Amount"
-                            className="w-24 bg-transparent text-[11px] font-black px-2 outline-none"
-                          />
-                          <button
-                            onClick={() => initiatePartialRelease(b.bookingId)}
-                            disabled={isProcessing === b.bookingId}
-                            className="bg-slate-900 text-white p-2 rounded-xl hover:bg-blue-600 transition-all disabled:opacity-50 shadow-lg shadow-slate-200"
-                          >
-                            {isProcessing === b.bookingId ? (
-                              <Loader2 size={14} className="animate-spin" />
-                            ) : (
-                              <Send size={14} />
-                            )}
-                          </button>
+                      {isFullyReleased ? (
+                        <div className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl uppercase tracking-widest border border-emerald-100">
+                           Fully Released
                         </div>
-                      )}
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => initiateFullRelease(b.bookingId, remaining)}
+                            disabled={isProcessing === b.bookingId}
+                            className="w-full max-w-[160px] bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold py-2.5 px-4 rounded-xl transition-all shadow-md shadow-blue-200 flex justify-center items-center gap-2 disabled:opacity-50"
+                          >
+                            <Banknote size={14} /> Full Release
+                          </button>
 
-                      {remaining <= 0 && !b.amountReleased && (
-                        <span className="text-[8px] font-black text-emerald-600 uppercase">Limit Reached</span>
+                          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200 focus-within:border-blue-400 transition-all max-w-[160px] w-full">
+                            <input
+                              type="number"
+                              max={remaining}
+                              value={partialAmounts[b.bookingId] || ""}
+                              onChange={(e) => setPartialAmounts({ ...partialAmounts, [b.bookingId]: e.target.value })}
+                              placeholder="Amount"
+                              className="w-full bg-transparent text-[11px] font-black px-2 outline-none"
+                            />
+                            <button
+                              onClick={() => initiatePartialRelease(b.bookingId)}
+                              disabled={isProcessing === b.bookingId}
+                              className="bg-slate-900 text-white p-2 rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 shadow-md"
+                            >
+                              {isProcessing === b.bookingId ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                   </td>
@@ -224,6 +236,7 @@ export default function AdminPayoutDashboard() {
           </div>
         )}
       </div>
+
       {/* ACTION MODAL */}
       {modalConfig.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -236,13 +249,15 @@ export default function AdminPayoutDashboard() {
                 <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Banknote size={32} />
                 </div>
-                <h3 className="text-2xl font-black text-gray-900">Confirm Transfer?</h3>
+                <h3 className="text-2xl font-black text-gray-900">
+                  Confirm {modalConfig.releaseType === "full" ? "Full" : "Partial"} Transfer?
+                </h3>
                 <p className="text-gray-500 font-medium text-sm">
                   You are about to release <span className="font-bold text-gray-900">Rs. {modalConfig.amount}</span> to the vehicle owner.
                 </p>
                 <div className="flex gap-3 pt-6">
                   <button onClick={closeModal} disabled={!!isProcessing} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold">Cancel</button>
-                  <button onClick={executePartialRelease} disabled={!!isProcessing} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold flex justify-center items-center gap-2">
+                  <button onClick={executeRelease} disabled={!!isProcessing} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold flex justify-center items-center gap-2">
                     {isProcessing ? <Loader2 size={18} className="animate-spin" /> : "Release Funds"}
                   </button>
                 </div>
