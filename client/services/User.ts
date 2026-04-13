@@ -8,6 +8,10 @@ export async function uploadProfilePicture(file: File, token: string) {
 
   const res = await fetch(`${API_URL}/api/user/upload-profile-picture`, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: formData,
     credentials: "include",
   });
@@ -21,15 +25,20 @@ export async function uploadProfilePicture(file: File, token: string) {
 }
 
 export const updateProfile = async (
-  userData: { name: string; email: string; mobile: string; esewaMobile?: string },
+  userData: {
+    name: string;
+    email: string;
+    mobile: string;
+    esewaMobile?: string;
+  },
   file: File | null,
-  token: string
+  token: string,
 ): Promise<User> => {
   const formData = new FormData();
   formData.append("name", userData.name);
   formData.append("email", userData.email);
   formData.append("mobile", userData.mobile);
-  
+
   if (userData.esewaMobile) {
     formData.append("esewaMobile", userData.esewaMobile);
   }
@@ -38,6 +47,10 @@ export const updateProfile = async (
 
   const res = await fetch(`${API_URL}/api/user/profile`, {
     method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: formData,
     credentials: "include",
   });
@@ -49,14 +62,18 @@ export const updateProfile = async (
 };
 
 export const updatePassword = async (
-  passwordData: { currentPassword: string; newPassword: string; confirmPassword: string },
-  token: string
+  passwordData: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  },
+  token: string,
 ): Promise<boolean> => {
-  const res = await fetch(`${API_URL}/api/user/password`, { 
+  const res = await fetch(`${API_URL}/api/user/password`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     credentials: "include",
     body: JSON.stringify(passwordData),
@@ -73,14 +90,13 @@ export const getProfile = async (token: string): Promise<User> => {
   const res = await fetch(`${API_URL}/api/user/getprofile`, {
     method: "GET",
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     credentials: "include",
   });
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Failed to fetch profile");
-  
+
   return data.user as User;
 };
-
