@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Car, User, Calendar, ArrowRight, Loader2, Send, DollarSign, Info } from "lucide-react";
+import { Car, User, Calendar, ArrowRight, Loader2, Send, DollarSign, CheckCircle2, XCircle, Banknote } from "lucide-react";
 import ReleaseButton from "../(components)/ReleaseAmount";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -11,6 +11,20 @@ export default function AdminPayoutDashboard() {
   const [loading, setLoading] = useState(true);
   const [partialAmounts, setPartialAmounts] = useState<{ [key: string]: string }>({});
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    status: "confirm" | "success" | "error";
+    message: string;
+    bookingId: string | null;
+    amount: string | null;
+  }>({
+    isOpen: false,
+    status: "confirm",
+    message: "",
+    bookingId: null,
+    amount: null,
+  });
 
   const fetchPending = async () => {
     try {
@@ -34,34 +48,46 @@ export default function AdminPayoutDashboard() {
     }
   };
 
-  const handlePartialRelease = async (bookingId: string) => {
+  const initiatePartialRelease = (bookingId: string) => {
     const amount = partialAmounts[bookingId];
-    if (!amount || parseFloat(amount) <= 0) return alert("Please enter a valid amount");
+    if (!amount || parseFloat(amount) <= 0) {
+      setModalConfig({ isOpen: true, status: "error", message: "Please enter a valid transfer amount greater than 0.", bookingId: null, amount: null });
+      return;
+    }
+    setModalConfig({ isOpen: true, status: "confirm", message: "", bookingId, amount });
+  };
+
+  const executePartialRelease = async () => {
+    const { bookingId, amount } = modalConfig;
+    if (!bookingId || !amount) return;
 
     setIsProcessing(bookingId);
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/api/bookings/partial-release/${bookingId}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({ customAmount: parseFloat(amount) })
       });
 
       const data = await res.json();
       if (data.success) {
-        alert(data.message);
+        setModalConfig({ isOpen: true, status: "success", message: data.message, bookingId: null, amount: null });
         fetchPending();
+        setPartialAmounts((prev) => ({ ...prev, [bookingId]: "" }));
       } else {
-        alert(data.message);
+        setModalConfig({ isOpen: true, status: "error", message: data.message || "Failed to process release.", bookingId: null, amount: null });
       }
     } catch (err) {
-      alert("Failed to process partial release");
+      setModalConfig({ isOpen: true, status: "error", message: "A network error occurred. Please try again.", bookingId: null, amount: null });
     } finally {
       setIsProcessing(null);
     }
+  };
+
+  const closeModal = () => {
+    if (isProcessing) return;
+    setModalConfig({ ...modalConfig, isOpen: false });
   };
 
   useEffect(() => { fetchPending(); }, []);
@@ -165,7 +191,7 @@ export default function AdminPayoutDashboard() {
                             className="w-24 bg-transparent text-[11px] font-black px-2 outline-none"
                           />
                           <button
-                            onClick={() => handlePartialRelease(b.bookingId)}
+                            onClick={() => initiatePartialRelease(b.bookingId)}
                             disabled={isProcessing === b.bookingId}
                             className="bg-slate-900 text-white p-2 rounded-xl hover:bg-blue-600 transition-all disabled:opacity-50 shadow-lg shadow-slate-200"
                           >
@@ -198,6 +224,57 @@ export default function AdminPayoutDashboard() {
           </div>
         )}
       </div>
+      {/* ACTION MODAL */}
+      {modalConfig.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={closeModal} />
+
+          <div className="relative bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Confirm State */}
+            {modalConfig.status === "confirm" && (
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Banknote size={32} />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900">Confirm Transfer?</h3>
+                <p className="text-gray-500 font-medium text-sm">
+                  You are about to release <span className="font-bold text-gray-900">Rs. {modalConfig.amount}</span> to the vehicle owner.
+                </p>
+                <div className="flex gap-3 pt-6">
+                  <button onClick={closeModal} disabled={!!isProcessing} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold">Cancel</button>
+                  <button onClick={executePartialRelease} disabled={!!isProcessing} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold flex justify-center items-center gap-2">
+                    {isProcessing ? <Loader2 size={18} className="animate-spin" /> : "Release Funds"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Success State */}
+            {modalConfig.status === "success" && (
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 size={32} />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900">Transfer Successful</h3>
+                <p className="text-gray-500 font-medium text-sm">{modalConfig.message}</p>
+                <button onClick={closeModal} className="w-full py-3 mt-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold">Done</button>
+              </div>
+            )}
+
+            {/* Error State */}
+            {modalConfig.status === "error" && (
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <XCircle size={32} />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900">Action Failed</h3>
+                <p className="text-gray-500 font-medium text-sm">{modalConfig.message}</p>
+                <button onClick={closeModal} className="w-full py-3 mt-4 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-2xl font-bold">Close</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
