@@ -53,7 +53,6 @@ export default function AdminDashboardPage() {
     loadData();
   };
 
-  // --- CLIENT SIDE FILTERING LOGIC ---
   const filteredData = useMemo(() => {
     return verifications.filter((v) => {
       const matchesSearch = v.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase());

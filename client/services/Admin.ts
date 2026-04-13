@@ -1,9 +1,18 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+const getAuthHeaders = () => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
+  return {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+  };
+};
+
 export const fetchAdminVerifications = async () => {
   try {
     const res = await fetch(`${API_URL}/api/verifications/dashboard/admin`, {
       method: "GET",
+      headers: getAuthHeaders(),
       credentials: "include",
     });
 
@@ -24,6 +33,7 @@ export const fetchVerificationById = async (id: number | string | undefined) => 
 
   const res = await fetch(`${API_URL}/api/verifications/dashboard/admin/${id}`, {
     credentials: "include",
+    headers: getAuthHeaders(),
   });
   return res.json();
 };
@@ -32,7 +42,10 @@ export const fetchVerificationById = async (id: number | string | undefined) => 
 export const approveVerification = async (id: number | string) => {
   const res = await fetch(`${API_URL}/api/verifications/dashboard/admin/approve/${id}`, {
     method: "PUT",
+    headers: getAuthHeaders(),
     credentials: "include",
+    
+
   });
   return res.json();
 };
@@ -40,10 +53,8 @@ export const approveVerification = async (id: number | string) => {
 export const rejectVerification = async (id: number, remarks: string) => {
   const res = await fetch(`${API_URL}/api/verifications/dashboard/admin/reject/${id}`, {
     method: "PUT",
+    headers: getAuthHeaders(),
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify({ remarks }),
   });
   return res.json();
@@ -54,6 +65,7 @@ export const fetchApprovedVehicles = async () => {
   try {
     const res = await fetch(`${API_URL}/api/vehicles/approved`, {
       method: "GET",
+      headers: getAuthHeaders(),
       credentials: "include",
     });
     if (!res.ok) {
@@ -72,6 +84,7 @@ export const fetchRejectedVehicles = async () => {
   try {
     const res = await fetch(`${API_URL}/api/vehicles/rejected`, {
       method: "GET",
+      headers: getAuthHeaders(),
       credentials: "include",
     });
     if (!res.ok) {
