@@ -18,6 +18,8 @@ const uploadFields = upload.fields([
 
 // POST verification
 router.post("/create",
+  authenticateUser,
+  verifyRole(["owner"]),
   uploadFields, createVerification);
 
 // GET all verifications
