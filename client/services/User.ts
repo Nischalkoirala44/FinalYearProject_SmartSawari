@@ -9,7 +9,6 @@ export async function uploadProfilePicture(file: File, token: string) {
   const res = await fetch(`${API_URL}/api/user/upload-profile-picture`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
     body: formData,
@@ -48,7 +47,6 @@ export const updateProfile = async (
   const res = await fetch(`${API_URL}/api/user/profile`, {
     method: "PUT",
     headers: {
-      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
     body: formData,
