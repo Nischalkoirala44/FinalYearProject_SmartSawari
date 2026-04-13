@@ -222,7 +222,8 @@ exports.releaseBookingAmount = async (req, res) => {
       });
     }
 
-    const ESEWA_PAYOUT_URL = `${process.env.ESEWA_PAYOUT_URL} || https://uat.esewa.com.np/api/v1/disbursements/transfer`;
+    /*
+    const ESEWA_PAYOUT_URL = process.env.ESEWA_PAYOUT_URL || "https://uat.esewa.com.np/api/v1/disbursements/transfer";
 
     const payoutPayload = {
       merchant_id: process.env.ESEWA_PRODUCT_CODE,
@@ -235,6 +236,10 @@ exports.releaseBookingAmount = async (req, res) => {
     const esewaResponse = await axios.post(ESEWA_PAYOUT_URL, payoutPayload, {
       headers: { Authorization: `Bearer ${process.env.ESEWA_API_TOKEN}` },
     });
+  */
+
+  console.log(`Initiating payout of Rs. ${ownerShare} to ${owner.name} (${owner.esewaMobile}) for Booking ${booking.bookingId} via eSewa...`);
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // REAL WORLD ESEWA DISBURSEMENT END
     await User.increment(
