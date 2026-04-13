@@ -33,8 +33,17 @@ export default function AdminVerificationDetails() {
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  // Modal State
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; type: "approve" | "reject"; targetId: number | null }>({
+    isOpen: false,
+    type: "approve",
+    targetId: null
+  });
+  const [rejectReason, setRejectReason] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -60,28 +69,33 @@ export default function AdminVerificationDetails() {
     return sanitized.startsWith("http") ? sanitized : `${baseUrl}/${sanitized}`;
   };
 
-  const handleApprove = async (id: number) => {
-    if (!confirm("Confirm approval for this vehicle?")) return;
-    setActionLoading(true);
-    try {
-      await approveVerification(id);
-      fetchData();
-    } catch (e) {
-      alert("Approve failed");
-    } finally {
-      setActionLoading(false);
-    }
+  const openModal = (type: "approve" | "reject", targetId: number) => {
+    setRejectReason("");
+    setActionError(null);
+    setModalConfig({ isOpen: true, type, targetId });
   };
 
-  const handleReject = async (id: number) => {
-    const reason = prompt("Enter reason for rejection:");
-    if (!reason) return;
+  const closeModal = () => {
+    if (actionLoading) return;
+    setModalConfig({ isOpen: false, type: "approve", targetId: null });
+  };
+
+  const executeAction = async () => {
+    if (!modalConfig.targetId) return;
     setActionLoading(true);
+    setActionError(null);
+    
     try {
-      await rejectVerification(id, reason);
-      fetchData();
+      if (modalConfig.type === "approve") {
+        await approveVerification(modalConfig.targetId);
+      } else {
+        await rejectVerification(modalConfig.targetId, rejectReason);
+      }
+      await fetchData();
+      closeModal();
     } catch (e) {
-      alert("Reject failed");
+      console.error(e);
+      setActionError(`Failed to ${modalConfig.type} this vehicle. Please try again.`);
     } finally {
       setActionLoading(false);
     }
@@ -101,7 +115,7 @@ export default function AdminVerificationDetails() {
   return (
     <div className="max-w-5xl mx-auto pb-20 space-y-8 animate-in fade-in duration-700">
       
-      {/* 1. BREADCRUMBS & TOP NAV */}
+      {/* BREADCRUMBS & TOP NAV */}
       <div className="flex items-center justify-between">
         <nav className="flex items-center gap-2 text-sm font-medium text-gray-500">
           <button onClick={() => router.back()} className="hover:text-blue-600 transition-colors">Admin</button>
@@ -119,7 +133,7 @@ export default function AdminVerificationDetails() {
         </div>
       </div>
 
-      {/* 2. MAIN ACTION HEADER */}
+      {/* MAIN ACTION HEADER */}
       <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xl shadow-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-2 h-full bg-blue-600" />
         <div className="flex items-center gap-5">
@@ -135,28 +149,25 @@ export default function AdminVerificationDetails() {
         {data.status === "pending" && (
           <div className="flex items-center gap-3">
             <button
-              disabled={actionLoading}
-              onClick={() => handleReject(data.id)}
-              className="px-6 py-3 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-2xl transition-all font-bold text-sm disabled:opacity-50"
+              onClick={() => openModal("reject", data.id)}
+              className="px-6 py-3 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-2xl transition-all font-bold text-sm"
             >
               Reject
             </button>
             <button
-              disabled={actionLoading}
-              onClick={() => handleApprove(data.id)}
-              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl transition-all font-bold text-sm shadow-lg shadow-blue-200 disabled:opacity-50 flex items-center gap-2"
+              onClick={() => openModal("approve", data.id)}
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl transition-all font-bold text-sm shadow-lg shadow-blue-200 flex items-center gap-2"
             >
-              {actionLoading ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
-              Approve Asset
+              <ShieldCheck size={18} /> Approve Asset
             </button>
           </div>
         )}
       </div>
 
-      {/* 3. VEHICLE PROFILE SUMMARY (STACKED TOP) */}
+      {/* VEHICLE PROFILE SUMMARY (STACKED TOP) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <DetailTile label="Registration" value={data.registrationNumber} icon={Hash} />
-        <DetailTile label="Pricing" value={`$${data.pricePerDay} / day`} icon={Banknote} />
+        <DetailTile label="Pricing" value={`NPR ${data.pricePerDay} / day`} icon={Banknote} />
         <DetailTile label="Type" value={data.vehicleType} icon={Car} />
         <DetailTile label="Condition" value={data.vehicleCondition || "Good"} icon={ShieldCheck} />
       </div>
@@ -170,7 +181,7 @@ export default function AdminVerificationDetails() {
         </div>
       )}
 
-      {/* 4. DOCUMENT EVIDENCE (BELOW) */}
+      {/* DOCUMENT EVIDENCE */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
@@ -223,10 +234,83 @@ export default function AdminVerificationDetails() {
         </div>
       </section>
 
-      {/* IMAGE MODAL */}
+      {/* ACTION MODAL */}
+      {modalConfig.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={closeModal} />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            {modalConfig.type === "approve" ? (
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <ShieldCheck size={32} />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900">Approve Asset?</h3>
+                <p className="text-gray-500 font-medium text-sm">
+                  This will verify the documents and make the vehicle instantly active and available for rent in the fleet.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 mb-4">
+                   <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center">
+                    <XCircle size={24} />
+                  </div>
+                  <h3 className="text-xl font-black text-gray-900">Reject Asset</h3>
+                </div>
+                <p className="text-gray-500 font-medium text-sm">
+                  Please provide a clear reason for rejecting this verification. The vehicle owner will see this feedback.
+                </p>
+                <textarea 
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="e.g., Blur bluebook image, expired license..."
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500/50 resize-none h-28"
+                />
+              </div>
+            )}
+
+            {/* Error Message Display */}
+            {actionError && (
+              <div className="mt-4 p-3 bg-red-50 text-red-600 text-sm font-bold rounded-xl flex items-center gap-2">
+                <AlertCircle size={16} /> {actionError}
+              </div>
+            )}
+
+            {/* Modal Buttons */}
+            <div className="flex gap-3 pt-6">
+              <button 
+                onClick={closeModal} 
+                disabled={actionLoading} 
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              
+              <button 
+                onClick={executeAction} 
+                disabled={actionLoading || (modalConfig.type === "reject" && !rejectReason.trim())} 
+                className={`flex-1 py-3 text-white rounded-2xl font-bold transition-colors flex justify-center items-center gap-2 disabled:opacity-50 ${
+                  modalConfig.type === "approve" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+                }`}
+              >
+                {actionLoading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  modalConfig.type === "approve" ? "Approve Asset" : "Reject Asset"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IMAGE VIEWER MODAL */}
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-gray-900/95 z-[100] flex items-center justify-center p-6 backdrop-blur-md cursor-zoom-out animate-in fade-in duration-300"
+          className="fixed inset-0 bg-gray-900/95 z-[200] flex items-center justify-center p-6 backdrop-blur-md cursor-zoom-out animate-in fade-in duration-300"
           onClick={() => setSelectedImage(null)}
         >
           <img src={selectedImage} alt="Preview" className="max-h-full max-w-full rounded-xl shadow-2xl ring-1 ring-white/20" />
